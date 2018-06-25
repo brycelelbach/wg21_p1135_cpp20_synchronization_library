@@ -1,12 +1,12 @@
 <pre class='metadata'>
 Group: WG21
 Title: The C++20 Synchronization Library
-Status: D
-Shortname: DTODO
+Status: P
+Shortname: P1135
 Revision: 0
 Audience: SG1, LEWG, LWG
-Issue Tracking: GitHub https://github.com/brycelelbach/TODO/issues
-URL: http://wg21.link/DTODOR0
+Issue Tracking: GitHub https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/issues
+URL: http://wg21.link/P1135r0
 Editor: Bryce Adelstein Lelbach, NVIDIA, brycelelbach@gmail.com
 Editor: Olivier Giroux, NVIDIA, ogiroux@nvidia.com
 Editor: JF Bastien, Apple, jfbastien@apple.com
@@ -43,29 +43,40 @@ ul {
 blockquote {
   counter-reset: paragraph;
 }
-div.numbered {
-  margin-left: 30px;
+div.numbered, div.newnumbered {
+  margin-left: 2em;
   margin-top: 1em;
   margin-bottom: 1em;
 }
-div.numbered:before {
+div.numbered:before, div.newnumbered:before {
   position: absolute;
-  margin-left: -30px;
+  margin-left: -2em;
   display-style: block;
+}
+div.numbered:before {
   content: counter(paragraph);
   counter-increment: paragraph;
 }
-div.numbered ul {
+div.newnumbered:before {
+  content: "�";
+}
+div.numbered ul, div.newnumbered {
   counter-reset: list_item;
 }
-div.numbered li {
-  margin-left: 45px;
+div.numbered li, div.newnumbered {
+  margin-left: 3em;
+}
+div.numbered li:before, div.newnumbered li:before {
+  position: absolute;
+  margin-left: -4.8em;
+  display-style: block;
 }
 div.numbered li:before {
-  position: absolute;
-  margin-left: -75px;
-  display-style: block;
   content: "(" counter(paragraph) "." counter(list_item) ")";
+  counter-increment: list_item;
+}
+div.newnumbered li:before {
+  content: "(�." counter(list_item) ")";
   counter-increment: list_item;
 }
 </style>
@@ -73,14 +84,24 @@ div.numbered li:before {
 Introduction {#intro}
 =====================
 
+This paper is the unification of the wording for a series of related C++20
+proposals for introducing new synchronization and thread coordination
+facilities and enhancing existing ones:
+
+- [[P0514]]: Efficient `atomic` waiting and semaphores.
+- [[P0666]]: Latches and barriers.
+- [[P0995]]: `atomic_flag::test` and lockfree integral types.
+
 Wording {#wording}
 ==================
 
-Note: The � character is used to denote a placeholder subclause number. 
+Note: The � character is used to denote a placeholder number which shall be selected by the editor.
 
 Modify the header synopsis for `<atomic>` in [**atomics.syn**] as follows:
 
 <blockquote>
+<b>32.2 Header `<atomic>` synopsis <span style="float: right;">[atomics.syn]</span></b>
+
 <pre><code>
 namespace std {
   <i>// ...</i>
@@ -98,8 +119,33 @@ namespace std {
 </code></pre>
 <pre class="ins"><code>  using atomic_int_fast_wait_t  = atomic&lt;<i>implementation-defined</i>&gt;;</code></pre>
 <pre class="ins"><code>  using atomic_uint_fast_wait_t = atomic&lt;<i>implementation-defined</i>&gt;;</code></pre>
+<pre class="ins"><code></code></pre>
+<pre class="ins"><code>  using atomic_signed_lock_free   = <i>see below</i>;</code></pre>
+<pre class="ins"><code>  using atomic_unsigned_lock_free = <i>see below</i>;</code></pre>
 <pre><code>
-&nbsp; 
+&nbsp;
+  <i>// ...</i>
+
+  <i>// 32.8, flag type and operations</i>
+  struct atomic_flag;
+</code></pre>
+<ins><xmp>
+  bool atomic_flag_test(volatile atomic_flag*) noexcept;
+  bool atomic_flag_test(atomic_flag*) noexcept;
+  bool atomic_flag_test_explicit(volatile atomic_flag*, memory_order) noexcept;
+  bool atomic_flag_test_explicit(atomic_flag*, memory_order) noexcept;
+</xmp></ins>
+<pre><code>
+&nbsp; bool atomic_flag_test_and_set(volatile atomic_flag*) noexcept;
+  bool atomic_flag_test_and_set(atomic_flag*) noexcept;
+  bool atomic_flag_test_and_set_explicit(volatile atomic_flag*, memory_order) noexcept;
+  bool atomic_flag_test_and_set_explicit(atomic_flag*, memory_order) noexcept;
+  void atomic_flag_clear(volatile atomic_flag*) noexcept;
+  void atomic_flag_clear(atomic_flag*) noexcept;
+  void atomic_flag_clear_explicit(volatile atomic_flag*, memory_order) noexcept;
+  void atomic_flag_clear_explicit(atomic_flag*, memory_order) noexcept;
+  #define ATOMIC_FLAG_INIT <i>see below</i>
+
   <i>// 32.9, fences</i>
   extern "C" void atomic_thread_fence(memory_order) noexcept;
   extern "C" void atomic_signal_fence(memory_order) noexcept;   
@@ -111,15 +157,24 @@ namespace std {
     void atomic_notify_one(const volatile atomic<T>*);
   template<class T> 
     void atomic_notify_one(const atomic<T>*);
+  void atomic_notify_one(const volatile atomic_flag*);
+  void atomic_notify_one(const atomic_flag*);
   template<class T> 
     void atomic_notify_all(const volatile atomic<T>*);
   template<class T> 
     void atomic_notify_all(const atomic<T>*);
+  void atomic_notify_all(const volatile atomic_flag*);
+  void atomic_notify_all(const atomic_flag*);
   template<class T> 
     void atomic_wait(const volatile atomic<T>*, 
                      typename atomic<T>::value_type);
   template<class T> 
-    void atomic_wait(const atomic<T>*, typename atomic<T>::value_type);
+    void atomic_wait(const atomic<T>*,
+                     typename atomic<T>::value_type);
+  void atomic_wait(const volatile atomic_flag*,
+                   bool);
+  void atomic_wait(const atomic_flag*,
+                   bool);
   template<class T> 
     void atomic_wait_explicit(const volatile atomic<T>*, 
                               typename atomic<T>::value_type, 
@@ -128,10 +183,171 @@ namespace std {
     void atomic_wait_explicit(const atomic<T>*, 
                               typename atomic<T>::value_type,
                               memory_order);
+  void atomic_wait_explicit(const volatile atomic_flag*,
+                            bool,
+                            memory_order);
+  void atomic_wait_explicit(const atomic_flag*,
+                            bool,
+                            memory_order);
 </xmp></ins>
 <xmp>
 }
 </xmp>
+</blockquote>
+
+Modify [**atomics.alias**] as follows:
+
+<blockquote>
+<b>32.3 Type aliases <span style="float: right;">[atomics.alias]</span></b>
+
+<div class="numbered">
+The type aliases `atomic_intN_t`, `atomic_uintN_t`, `atomic_intptr_t`, and `atomic_uintptr_t` are defined if and only if `intN_t`, `uintN_t`, `intptr_t`, and `uintptr_t` are defined, respectively.
+</div>
+
+<div class="ins">
+<div class="numbered">
+The type aliases `atomic_signed_lock_free` and `atomic_unsigned_lock_free` are defined to be specializations of `atomic` whose template arguments are integral types, respectively signed and unsigned, other than `bool`.
+`is_always_lock_free` shall be `true` for `atomic_signed_lock_free` and `atomic_unsigned_lock_free`. An implementation should choose the integral specialization of `atomic` for which the waiting and notifying functions are most efficient.
+</div>
+
+<div class="numbered">
+The type aliases `atomic_int_fast_wait_t` and `atomic_uint_fast_wait_t` are integral atomic types.
+Implementations should ensure that invocations of waiting and notifying functions (32.�) with these types have the lowest performance overhead among integer types.
+</div>
+</div>
+</blockquote>
+
+Note: The reference to "waiting and notifying functions" in the above change should refer to the new [**atomic.wait**] subclause.
+
+Modify [**atomics.flag**] as follows:
+
+<blockquote>
+<b>32.8 Flag type and operations <span style="float: right;">[atomics.flag]</span></b>
+
+<xmp>
+namespace std {
+  struct atomic_flag {
+</xmp>
+<ins><xmp>
+    bool test(memory_order = memory_order_seq_cst) volatile noexcept;
+    bool test(memory_order = memory_order_seq_cst) noexcept;
+</xmp></ins>
+<pre><code>
+&nbsp;   bool test_and_set(memory_order = memory_order_seq_cst) volatile noexcept;
+    bool test_and_set(memory_order = memory_order_seq_cst) noexcept;
+    void clear(memory_order = memory_order_seq_cst) volatile noexcept;
+    void clear(memory_order = memory_order_seq_cst) noexcept;
+
+    atomic_flag() noexcept = default;
+    atomic_flag(const atomic_flag&amp;) = delete;
+    atomic_flag&amp; operator=(const atomic_flag&amp;) = delete;
+    atomic_flag&amp; operator=(const atomic_flag&amp;) volatile = delete;
+  };
+ 
+</code></pre>
+<ins><xmp>
+  bool atomic_flag_test(volatile atomic_flag*) noexcept;
+  bool atomic_flag_test(atomic_flag*) noexcept;
+  bool atomic_flag_test_explicit(volatile atomic_flag*, memory_order) noexcept;
+  bool atomic_flag_test_explicit(atomic_flag*, memory_order) noexcept;
+</xmp></ins>
+<pre><code>
+&nbsp; bool atomic_flag_test_and_set(volatile atomic_flag*) noexcept;
+  bool atomic_flag_test_and_set(atomic_flag*) noexcept;
+  bool atomic_flag_test_and_set_explicit(volatile atomic_flag*, memory_order) noexcept;
+  bool atomic_flag_test_and_set_explicit(atomic_flag*, memory_order) noexcept;
+  void atomic_flag_clear(volatile atomic_flag*) noexcept;
+  void atomic_flag_clear(atomic_flag*) noexcept;
+  void atomic_flag_clear_explicit(volatile atomic_flag*, memory_order) noexcept;
+  void atomic_flag_clear_explicit(atomic_flag*, memory_order) noexcept;
+</code></pre>
+<pre><code>  #define ATOMIC_FLAG_INIT <i>see below</i></code></pre>
+<xmp>
+}
+</xmp>
+
+<div class="numbered">
+The `atomic_flag` type provides the classic test-and-set functionality. It has two states, set and clear.
+</div>
+
+<div class="numbered">
+Operations on an object of type `atomic_flag` shall be lock-free.
+[ *Note:* Hence the operations should also be address-free. — *end note* ]
+</div>
+
+<div class="numbered">
+The `atomic_flag` type is a standard-layout struct. It has a trivial default
+constructor and a trivial destructor.
+</div>
+
+<div class="numbered">
+The macro `ATOMIC_FLAG_INIT` shall be defined in such a way that it can be used to initialize an object of type `atomic_flag` to the clear state.
+The macro can be used in the form:
+
+<xmp>atomic_flag guard = ATOMIC_FLAG_INIT;</xmp>
+
+It is unspecified whether the macro can be used in other initialization contexts.
+For a complete static-duration object, that initialization shall be static.
+Unless initialized with `ATOMIC_FLAG_INIT`, it is unspecified whether an `atomic_flag` object has an initial state of set or clear.
+</div>
+
+<div class="ins">
+<xmp>
+   bool atomic_flag_test(volatile atomic_flag* object) noexcept;
+   bool atomic_flag_test(atomic_flag* object) noexcept;
+   bool atomic_flag_test_explicit(volatile atomic_flag* object, memory_order order) noexcept;
+   bool atomic_flag_test_explicit(atomic_flag* object, memory_order order) noexcept;
+   bool atomic_flag::test(memory_order order = memory_order_seq_cst) volatile noexcept;
+   bool atomic_flag::test(memory_order order = memory_order_seq_cst) noexcept;
+</xmp>
+
+<div class="newnumbered">
+*Requires:* The `order` argument shall not be `memory_order_release` nor `memory_order_acq_rel`.
+</div>
+
+<div class="newnumbered">
+*Effects:* Memory is affected according to the value of `order`.
+</div>
+
+<div class="newnumbered">
+*Returns:* Atomically returns the value pointed to by `object` or `this`.
+</div>
+</div>
+
+<xmp>
+   bool atomic_flag_test_and_set(volatile atomic_flag* object) noexcept;
+   bool atomic_flag_test_and_set(atomic_flag* object) noexcept;
+   bool atomic_flag_test_and_set_explicit(volatile atomic_flag* object, memory_order order) noexcept;
+   bool atomic_flag_test_and_set_explicit(atomic_flag* object, memory_order order) noexcept;
+   bool atomic_flag::test_and_set(memory_order order = memory_order_seq_cst) volatile noexcept;
+   bool atomic_flag::test_and_set(memory_order order = memory_order_seq_cst) noexcept;
+</xmp>
+
+<div class="numbered">
+*Effects:* Atomically sets the value pointed to by `object` or by `this` to `true`.
+Memory is affected according to the value of `order`.
+These operations are atomic read-modify-write operations (4.7).
+</div>
+
+<div class="numbered">
+*Returns:* Atomically, the value of the object immediately before the effects.
+</div>
+
+<xmp>
+void atomic_flag_clear(volatile atomic_flag* object) noexcept;
+void atomic_flag_clear(atomic_flag* object) noexcept;
+void atomic_flag_clear_explicit(volatile atomic_flag* object,
+                                memory_order order) noexcept;
+void atomic_flag_clear_explicit(atomic_flag* object, memory_order order) noexcept;
+void atomic_flag::clear(memory_order order = memory_order_seq_cst) volatile noexcept;
+void atomic_flag::clear(memory_order order = memory_order_seq_cst) noexcept;
+</xmp>
+
+*Requires:* The `order` argument shall not be `memory_order_consume`,
+`memory_order_acquire`, nor `memory_order_acq_rel`.
+
+*Effects:* Atomically sets the value pointed to by `object` or by `this` to
+`false`. Memory is affected according to the value of `order`.
 </blockquote>
 
 Add a new subclause after [**atomics.fences**]:
@@ -150,20 +366,13 @@ The functions `atomic_wait` and `atomic_wait_explicit` are waiting functions.
 The functions `atomic_notify_one` and `atomic_notify_all` are notifying functions.
 </div>
 
-<pre><code>
-using atomic_int_fast_wait_t  = atomic&lt;<i>implementation-defined</i>&gt;;
-using atomic_uint_fast_wait_t = atomic&lt;<i>implementation-defined</i>&gt;;
-</code></pre>
-
-<div class="numbered">
-The type aliases `atomic_int_fast_wait_t` and `atomic_uint_fast_wait_t` are integral atomic types. Implementations should ensure that invocations of waiting and notifying functions with these types have the lowest performance overhead among integer types.
-</div>
-
 ```
 template<class T> 
   void atomic_notify_one(const volatile atomic<T>* object);
 template<class T> 
   void atomic_notify_one(const atomic<T>* object);
+void atomic_notify_one(const volatile atomic_flag* object);
+void atomic_notify_one(const atomic_flag* object);
 ```
 
 <div class="numbered">
@@ -175,10 +384,29 @@ template<class T>
   void atomic_notify_all(const volatile atomic<T>* object);
 template<class T> 
   void atomic_notify_all(const atomic<T>* object);
+void atomic_notify_all(const volatile atomic_flag* object);
+void atomic_notify_all(const atomic_flag* object);
 ```
 
 <div class="numbered">
 *Effects:* Unblocks each execution of a waiting function that blocked after observing the result of an atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*object`, and `Y` happens before this call.
+</div>
+
+```
+template<class T> 
+  void atomic_wait(const volatile atomic<T>* object, 
+                   typename atomic<T>::value_type old);
+template<class T> 
+  void atomic_wait(const atomic<T>* object, 
+                   typename atomic<T>::value_type old);
+void atomic_wait(const volatile atomic_flag* object,
+                 bool old);
+void atomic_wait(const atomic_flag* object,
+                 bool old);
+```
+
+<div class="numbered">
+*Effects:* Equivalent to `atomic_wait_explicit(object, old, memory_order_seq_cst);`
 </div>
 
 ```
@@ -206,16 +434,25 @@ template<class T>
 </div>
 
 ```
-template<class T> 
-  void atomic_wait(const volatile atomic<T>* object, 
-                   typename atomic<T>::value_type old);
-template<class T> 
-  void atomic_wait(const atomic<T>* object, 
-                   typename atomic<T>::value_type old);
+void atomic_wait_explicit(const volatile atomic_flag* object, 
+                          bool old,
+                          memory_order order);
+void atomic_wait_explicit(const atomic_flag* object, 
+                          bool old,
+                          memory_order order);
 ```
 
 <div class="numbered">
-*Effects:* Equivalent to `atomic_wait_explicit(object, old, memory_order_seq_cst);`
+*Requires:* The order argument shall not be `memory_order_release` nor `memory_order_acq_rel`.
+</div>
+
+<div class="numbered">
+*Effects:* Repeatedly performs the following steps, in order: 
+
+- Evaluates `object->test(order) != old` then, if the result is `true`, returns.
+- Blocks until an implementation-defined condition has been met.
+    [ *Note:* Consequently, it may unblock for reasons other than a call to a notifying function. — *end note* ]
+
 </div>
 </blockquote>
 
@@ -253,7 +490,7 @@ A counting semaphore is a semaphore object that models a non-negative resource c
 </blockquote>
 
 <blockquote class="ins">
-<b>33.�.1 Header `<semaphore>` synopsis <span style="float: right;">[thread.semaphore.synopsis]</span></b>
+<b>33.�.1 Header `<semaphore>` synopsis <span style="float: right;">[thread.semaphore.syn]</span></b>
 
 <pre><code>
 namespace std {  
@@ -399,7 +636,7 @@ template<class Rep, class Period>
 
 
 <blockquote class="ins">
-<b>33.� Coordination Types <span style="float: right;">[thread.coordination]</span></b>
+<b>33.� Coordination Types <span style="float: right;">[thread.coord]</span></b>
 
 <div class="numbered">
 This section describes various concepts related to thread coordination, and defines the <dfn>coordination types</dfn> `latch` and `barrier`. These types facilitate concurrent computation performed by a number of threads, in one or more phases.
@@ -415,7 +652,7 @@ Concurrent invocations of the member functions of coordination types, other than
 </blockquote>
 
 <blockquote class="ins">
-<b>33.�.1 Latches <span style="float: right;">[thread.coordination.latch]</span></b>
+<b>33.�.1 Latches <span style="float: right;">[thread.coord.latch]</span></b>
 
 <div class="numbered">
 A latch is a thread coordination mechanism that allows any number of threads to block until an expected count is summed (exactly) by threads that arrived at the latch. The expected count is set when the latch is constructed. An individual latch is a single-use object; once the count has been reached, the latch cannot be reused. 
@@ -423,7 +660,7 @@ A latch is a thread coordination mechanism that allows any number of threads to 
 </blockquote>
 
 <blockquote class="ins">
-<b>33.�.1.1 Header `<latch>` synopsis <span style="float: right;">[thread.coordination.latch.synopsis]</span></b>
+<b>33.�.1.1 Header `<latch>` synopsis <span style="float: right;">[thread.coord.latch.syn]</span></b>
 
 <xmp>
 namespace std {
@@ -433,7 +670,7 @@ namespace std {
 </blockquote>
 
 <blockquote class="ins">
-<b>33.�.1.2 Class `latch` <span style="float: right;">[thread.coordination.latch.class]</span></b>
+<b>33.�.1.2 Class `latch` <span style="float: right;">[thread.coord.latch.class]</span></b>
 
 <pre><code>
 namespace std {
@@ -538,7 +775,7 @@ void arrive_and_wait(ptrdiff_t update);
 </blockquote>
 
 <blockquote class="ins">
-<b>33.�.2 Barriers <span style="float: right;">[thread.coordination.barrier]</span></b>
+<b>33.�.2 Barriers <span style="float: right;">[thread.coord.barrier]</span></b>
 
 <div class="numbered">
 A barrier is a thread coordination mechanism that allows at most an expected count of threads to block until that count is summed (exactly) by threads that arrived at the barrier in each of its successive phases. Once threads are released from blocking at the synchronization point for a phase, they can reuse the same barrier immediately in its next phase. [ *Note:* It is thus useful for managing repeated tasks, or phases of a larger task, that are handled by multiple threads. — *end note* ]
@@ -552,7 +789,7 @@ A barrier has a completion step that is a (possibly empty) set of effects associ
 </blockquote>
 
 <blockquote class="ins">
-<b>33.�.2.1 Header `<barrier>` synopsis <span style="float: right;">[thread.coordination.barrier.synopsis]</span></b>
+<b>33.�.2.1 Header `<barrier>` synopsis <span style="float: right;">[thread.coord.barrier.syn]</span></b>
 
 <pre><code>
 namespace std {
@@ -563,14 +800,14 @@ namespace std {
 </blockquote>
 
 <blockquote class="ins">
-<b>33.�.2.2 Class template `barrier` <span style="float: right;">[thread.coordination.barrier.class]</span></b>
+<b>33.�.2.2 Class template `barrier` <span style="float: right;">[thread.coord.barrier.class]</span></b>
 
 <pre><code>
 namespace std {
   template&ltclass CompletionFunction&gt;
   class barrier {
   public:
-    using value_type = implementation-defined;
+    using arrival_token = implementation-defined;
 
     explicit barrier(ptrdiff_t expected,
                      CompletionFunction f = CompletionFunction());
@@ -581,9 +818,9 @@ namespace std {
     barrier&amp; operator=(const barrier&amp;) = delete;
     barrier&amp; operator=(barrier&amp;&amp;) = delete;
 
-    [[nodiscard]] value_type arrive(ptrdiff_t update = 1);
-    bool try_wait(value_type) const;
-    void wait(value_type) const;
+    [[nodiscard]] arrival_token arrive(ptrdiff_t update = 1);
+    bool try_wait(arrival_token) const;
+    void wait(arrival_token) const;
 
     void arrive_and_wait();
     void arrive_and_drop();
@@ -603,7 +840,7 @@ A `barrier` is a barrier type with a completion step controlled by a function ob
 </div>
 
 <div class="numbered">
-`barrier::value_type` is an implementation-defined type that is `MoveConstructible` and `MoveAssignable`.
+`barrier::arrival_token` is an implementation-defined type that is `MoveConstructible` and `MoveAssignable`.
 </div>
 
 ```
@@ -637,7 +874,7 @@ explicit barrier(ptrdiff_t expected, CompletionFunction f);
 </div>
 
 ```
-[[nodiscard]] value_type arrive(ptrdiff_t update);
+[[nodiscard]] arrival_token arrive(ptrdiff_t update);
 ```
 
 <div class="numbered">
@@ -645,7 +882,7 @@ explicit barrier(ptrdiff_t expected, CompletionFunction f);
 </div>
 
 <div class="numbered">
-*Effects:* Constructs an object of type `value_type` that is associated with the `barrier`'s synchronization point for the current phase, then arrives `update` times at the synchronization point for the current phase.
+*Effects:* Constructs an object of type `arrival_token` that is associated with the `barrier`'s synchronization point for the current phase, then arrives `update` times at the synchronization point for the current phase.
 </div>
 
 <div class="numbered">
@@ -662,7 +899,7 @@ explicit barrier(ptrdiff_t expected, CompletionFunction f);
 
 
 ```
-bool try_wait(value_type arrival) const;
+bool try_wait(arrival_token arrival) const;
 ```
 
 <div class="numbered">
@@ -675,7 +912,7 @@ bool try_wait(value_type arrival) const;
 
 
 ```
-void wait(value_type arrival) const;
+void wait(arrival_token arrival) const;
 ```
 
 <div class="numbered">
@@ -718,8 +955,10 @@ void arrive_and_drop();
 
 Create the following feature test macros:
 
-- `__cpp_lib_atomic_wait`
-- `__cpp_lib_semaphore`
-- `__cpp_lib_latch`
-- `__cpp_lib_barrier`
+- `__cpp_lib_atomic_lock_free_type_aliases`, which implies that `atomic_signed_lock_free` and `atomic_unsigned_lock_free` types are available.
+- `__cpp_lib_atomic_flag_test`, which implies the `test` methods and free functions for `atomic_flag` are available.
+- `__cpp_lib_atomic_wait`, which implies the `notify_*` and `wait` methods and free functions for `atomic` and `atomic_flag` and the `atomic_int_fast_wait_t` and `atomic_uint_fast_wait_t` types are available.
+- `__cpp_lib_semaphore`, which implies that `counting_semaphore` and `binary_semaphore` are available.
+- `__cpp_lib_latch`, which implies that `latch` is available.
+- `__cpp_lib_barrier`, which implies that `barrier` is available.
 
