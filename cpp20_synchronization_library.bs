@@ -317,7 +317,8 @@ Unless initialized with `ATOMIC_FLAG_INIT`, it is unspecified whether an `atomic
 <xmp>
    bool atomic_flag_test_and_set(volatile atomic_flag* object) noexcept;
    bool atomic_flag_test_and_set(atomic_flag* object) noexcept;
-   bool atomic_flag_test_and_set_explicit(volatile atomic_flag* object, memory_order order) noexcept;
+   bool atomic_flag_test_and_set_explicit(volatile atomic_flag* object,
+                                          memory_order order) noexcept;
    bool atomic_flag_test_and_set_explicit(atomic_flag* object, memory_order order) noexcept;
    bool atomic_flag::test_and_set(memory_order order = memory_order_seq_cst) volatile noexcept;
    bool atomic_flag::test_and_set(memory_order order = memory_order_seq_cst) noexcept;
