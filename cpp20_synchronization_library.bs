@@ -1,0 +1,725 @@
+<pre class='metadata'>
+Group: WG21
+Title: The C++20 Synchronization Library
+Status: D
+Shortname: DTODO
+Revision: 0
+Audience: SG1, LEWG, LWG
+Issue Tracking: GitHub https://github.com/brycelelbach/TODO/issues
+URL: http://wg21.link/DTODOR0
+Editor: Bryce Adelstein Lelbach, NVIDIA, brycelelbach@gmail.com
+Editor: Olivier Giroux, NVIDIA, ogiroux@nvidia.com
+Editor: JF Bastien, Apple, jfbastien@apple.com
+Date: 2018-06-12
+Markup Shorthands: markdown yes
+Toggle Diffs: yes
+No Abstract: yes
+Boilerplate: style-syntax-highlighting off
+</pre>
+
+<style>
+pre {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+.ins, ins, ins *, span.ins, span.ins * {
+  background-color: rgb(200, 250, 200);
+  color: rgb(0, 136, 0);
+  text-decoration: none;
+}
+.del, del, del *, span.del, span.del * {
+  background-color: rgb(250, 200, 200);
+  color: rgb(255, 0, 0);
+  text-decoration: line-through;
+  text-decoration-color: rgb(255, 0, 0);
+}
+math, span.math {
+  font-family: serif;
+  font-style: italic;
+}
+ul {
+  list-style-type: "— ";
+}
+blockquote {
+  counter-reset: paragraph;
+}
+div.numbered {
+  margin-left: 30px;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+div.numbered:before {
+  position: absolute;
+  margin-left: -30px;
+  display-style: block;
+  content: counter(paragraph);
+  counter-increment: paragraph;
+}
+div.numbered ul {
+  counter-reset: list_item;
+}
+div.numbered li {
+  margin-left: 45px;
+}
+div.numbered li:before {
+  position: absolute;
+  margin-left: -75px;
+  display-style: block;
+  content: "(" counter(paragraph) "." counter(list_item) ")";
+  counter-increment: list_item;
+}
+</style>
+
+Introduction {#intro}
+=====================
+
+Wording {#wording}
+==================
+
+Note: The � character is used to denote a placeholder subclause number. 
+
+Modify the header synopsis for `<atomic>` in [**atomics.syn**] as follows:
+
+<blockquote>
+<pre><code>
+namespace std {
+  <i>// ...</i>
+
+  <i>// 32.3, type aliases</i>
+  <i>// ...</i>
+   
+  using atomic_intptr_t       = atomic&lt;intptr_t&gt;;
+  using atomic_uintptr_t      = atomic&lt;uintptr_t&gt;;
+  using atomic_size_t         = atomic&lt;size_t&gt;;
+  using atomic_ptrdiff_t      = atomic&lt;ptrdiff_t&gt;;
+  using atomic_intmax_t       = atomic&lt;intmax_t&gt;;
+  using atomic_uintmax_t      = atomic&lt;uintmax_t&gt;;
+ 
+</code></pre>
+<pre class="ins"><code>  using atomic_int_fast_wait_t  = atomic&lt;<i>implementation-defined</i>&gt;;</code></pre>
+<pre class="ins"><code>  using atomic_uint_fast_wait_t = atomic&lt;<i>implementation-defined</i>&gt;;</code></pre>
+<pre><code>
+&nbsp; 
+  <i>// 32.9, fences</i>
+  extern "C" void atomic_thread_fence(memory_order) noexcept;
+  extern "C" void atomic_signal_fence(memory_order) noexcept;   
+  
+  <i>// 32.�, waiting and notifying functions</i>
+</code></pre>
+<ins><xmp>
+  template<class T> 
+    void atomic_notify_one(const volatile atomic<T>*);
+  template<class T> 
+    void atomic_notify_one(const atomic<T>*);
+  template<class T> 
+    void atomic_notify_all(const volatile atomic<T>*);
+  template<class T> 
+    void atomic_notify_all(const atomic<T>*);
+  template<class T> 
+    void atomic_wait(const volatile atomic<T>*, 
+                     typename atomic<T>::value_type);
+  template<class T> 
+    void atomic_wait(const atomic<T>*, typename atomic<T>::value_type);
+  template<class T> 
+    void atomic_wait_explicit(const volatile atomic<T>*, 
+                              typename atomic<T>::value_type, 
+                              memory_order);
+  template<class T> 
+    void atomic_wait_explicit(const atomic<T>*, 
+                              typename atomic<T>::value_type,
+                              memory_order);
+</xmp></ins>
+<xmp>
+}
+</xmp>
+</blockquote>
+
+Add a new subclause after [**atomics.fences**]:
+
+<blockquote class="ins">
+<b>32.� Waiting and notifying functions <span style="float: right;">[atomics.wait]</span></b>
+
+<div class="numbered">
+The functions in this subclause provide a mechanism to wait for the value of an atomic object to change, more efficiently than can be achieved with polling.
+Waiting functions in this facility may block until they are unblocked by notifying functions, according to each function’s effects.
+[ *Note:* Programs are not guaranteed to observe transient atomic values, an issue known as the A-B-A problem, resulting in continued blocking if a condition is only temporarily met. – *End note* ]
+</div>
+
+<div class="numbered">
+The functions `atomic_wait` and `atomic_wait_explicit` are waiting functions.
+The functions `atomic_notify_one` and `atomic_notify_all` are notifying functions.
+</div>
+
+<pre><code>
+using atomic_int_fast_wait_t  = atomic&lt;<i>implementation-defined</i>&gt;;
+using atomic_uint_fast_wait_t = atomic&lt;<i>implementation-defined</i>&gt;;
+</code></pre>
+
+<div class="numbered">
+The type aliases `atomic_int_fast_wait_t` and `atomic_uint_fast_wait_t` are integral atomic types. Implementations should ensure that invocations of waiting and notifying functions with these types have the lowest performance overhead among integer types.
+</div>
+
+```
+template<class T> 
+  void atomic_notify_one(const volatile atomic<T>* object);
+template<class T> 
+  void atomic_notify_one(const atomic<T>* object);
+```
+
+<div class="numbered">
+*Effects:* Unblocks up to execution of a waiting function that blocked after observing the result of an atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*object`, and `Y` happens before this call.
+</div>
+
+```
+template<class T> 
+  void atomic_notify_all(const volatile atomic<T>* object);
+template<class T> 
+  void atomic_notify_all(const atomic<T>* object);
+```
+
+<div class="numbered">
+*Effects:* Unblocks each execution of a waiting function that blocked after observing the result of an atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*object`, and `Y` happens before this call.
+</div>
+
+```
+template<class T> 
+  void atomic_wait_explicit(const volatile atomic<T>* object, 
+                            typename atomic<T>::value_type old, 
+                            memory_order order);
+template<class T> 
+  void atomic_wait_explicit(const atomic<T>* object, 
+                            typename atomic<T>::value_type old, 
+                            memory_order order);
+```
+
+<div class="numbered">
+*Requires:* The order argument shall not be `memory_order_release` nor `memory_order_acq_rel`.
+</div>
+
+<div class="numbered">
+*Effects:* Repeatedly performs the following steps, in order: 
+
+- Evaluates `object->load(order) != old` then, if the result is `true`, returns.
+- Blocks until an implementation-defined condition has been met.
+    [ *Note:* Consequently, it may unblock for reasons other than a call to a notifying function. — *end note* ]
+
+</div>
+
+```
+template<class T> 
+  void atomic_wait(const volatile atomic<T>* object, 
+                   typename atomic<T>::value_type old);
+template<class T> 
+  void atomic_wait(const atomic<T>* object, 
+                   typename atomic<T>::value_type old);
+```
+
+<div class="numbered">
+*Effects:* Equivalent to `atomic_wait_explicit(object, old, memory_order_seq_cst);`
+</div>
+</blockquote>
+
+Modify Table 140 "Thread support library summary" in [**thread.general**] as follows:
+
+<blockquote>
+<div style="text-align: center;">
+Table 140 — Thread support library summary
+</div>
+<table border=1 style="margin: auto;">
+<tr>             <th></th>     <th>Subclause</th>            <th>Header(s)</th> </tr>
+<tr>             <td>33.2</td> <td>Requirements</td>         <td></td> </tr>
+<tr>             <td>33.3</td> <td>Threads</td>              <td>`<thread>`</td> </tr>
+<tr>             <td>33.4</td> <td>Mutual exclusion</td>     <td>`<mutex>` `<shared_mutex>`</td> </tr>
+<tr>             <td>33.5</td> <td>Condition variables</td>  <td>`<condition_variable>`</td> </tr>
+<tr class="ins"> <td>33.�</td> <td>Semaphores</td>           <td>`<semaphore>`</td> </tr>
+<tr class="ins"> <td>33.�</td> <td>Latches and barriers</td> <td>`<latch>` `<barrier>`</td> </tr>
+<tr>             <td>33.6</td> <td>Futures</td>              <td>`<future>`</td> </tr>
+</table>
+</blockquote>
+
+Add two new subclauses after [**thread.condition**]:
+
+<blockquote class="ins">
+<b>33.� Semaphores <span style="float: right;">[thread.semaphore]</span></b>
+
+<div class="numbered">
+Semaphores are lightweight synchronization primitives used to constrain concurrent access to a shared resource. They are widely used to implement other synchronization primitives and, whenever both are applicable, can be more efficient than condition variables.
+</div>
+
+<div class="numbered">
+A counting semaphore is a semaphore object that models a non-negative resource count. A binary semaphore is a semaphore object that has only two states, also known as available and unavailable.
+[ *Note:* A binary semaphore should be more efficient than a counting semaphore with a unit magnitude count. – *end note* ]
+</div>
+</blockquote>
+
+<blockquote class="ins">
+<b>33.�.1 Header `<semaphore>` synopsis <span style="float: right;">[thread.semaphore.synopsis]</span></b>
+
+<pre><code>
+namespace std {  
+  template&lt;ptrdiff_t least_max_value = <i>implementation-defined</i>&gt;
+    class counting_semaphore;
+
+  using binary_semaphore = counting_semaphore&lt;1&gt;;
+}
+</code></pre>
+</blockquote>
+
+<blockquote class="ins">
+<b>33.�.2 Class template `counting_semaphore` <span style="float: right;">[thread.semaphore.counting.class]</span></b>
+
+<pre><code>
+namespace std {
+  template&lt;ptrdiff_t least_max_value&gt;
+  class counting_semaphore {
+  public:
+    static constexpr ptrdiff_t max() noexcept;
+
+    explicit constexpr counting_semaphore(ptrdiff_t);
+    ~counting_semaphore();
+
+    counting_semaphore(const basic_semaphore&amp;) = delete;
+    counting_semaphore(basic_semaphore&amp;&amp;) = delete;
+    counting_semaphore&amp; operator=(const basic_semaphore&amp;) = delete;
+    counting_semaphore&amp; operator=(basic_semaphore&amp;&amp;) = delete;
+
+    void release(ptrdiff_t update = 1);
+    void acquire();
+    bool try_acquire();
+    template&lt;class Clock, class Duration&gt;
+      bool try_acquire_until(const chrono::time_point&lt;Clock, Duration&gt;&amp;);
+    template&lt;class Rep, class Period&gt;
+      bool try_acquire_for(const chrono::duration&lt;Rep, Period&gt;&amp;);
+
+  private:
+    ptrdiff_t counter; <i>// exposition only</i>
+  };
+}
+</code></pre>
+
+<div class="numbered">
+Class `counting_semaphore` maintains an internal counter that is initialized when the semaphore is created. Threads may block waiting until `counter >= 1`.
+</div>
+
+<div class="numbered">
+Semaphores permit concurrent invocation of the `release`, `acquire`, `try_acquire`, `try_acquire_for`, and `try_acquire_until` member functions.
+</div>
+
+```
+static constexpr ptrdiff_t max() noexcept;
+```
+
+<div class="numbered">
+*Returns:* The maximum value of `counter`. This value shall not be less than that of the template argument `least_max_value`.
+[ *Note:* The value may exceed least_max_value. – *end note* ]
+</div>
+
+```
+explicit constexpr counting_semaphore(ptrdiff_t desired);
+```
+
+<div class="numbered">
+*Requires:* `desired >= 0` and `desired <= max()`.
+</div>
+
+<div class="numbered">
+*Effects:* `counter = desired`.
+</div>
+
+```
+~counting_semaphore();
+```
+
+<div class="numbered">
+*Requires:* For every function call that blocks on `counter`, a function call that will cause it to unblock and return shall happen before this call.
+[ *Note:* This relaxes the usual rules, which would have required all wait calls to happen before destruction. — *end note* ]
+</div>
+
+<div class="numbered">
+*Effects:* Destroys the object.
+</div>
+
+``` 
+void release(ptrdiff_t update = 1);
+```
+
+<div class="numbered">
+*Requires:* `update >= 0`, and `counter + update <= max()`. 
+</div>
+
+<div class="numbered">
+*Effects:* `counter += update`, executed atomically. If any threads are blocked on counter, unblocks them.
+</div>
+
+<div class="numbered">
+*Synchronization:* Strongly happens before invocations of `try_acquire` that observe the result of the effects.
+</div>
+
+```
+bool try_acquire();
+```
+
+<div class="numbered">
+*Effects:*
+- With low probability, returns immediately. [ *Note:* An implementation should ensure that `try_acquire` does not consistently return `false` in the absence of contending acquisitions. — *end note* ] 
+- Otherwise, if `counter >= 1`, then `counter -= 1` is executed atomically.
+</div>
+
+<div class="numbered">
+*Returns:* `true` if `counter` was decremented, otherwise `false`.
+</div>
+
+```
+void acquire();
+```
+
+<div class="numbered">
+*Effects:* Repeatedly performs the following steps, in order:
+- Evaluates `try_acquire`, then, if the result is `true`, returns. 
+- Blocks until `counter >= 1`.
+</div>
+
+```
+template<class Clock, class Duration>
+  bool try_acquire_until(const chrono::time_point<Clock, Duration>& abs_time);
+template<class Rep, class Period>
+  bool try_acquire_for(const chrono::duration<Rep, Period>& rel_time);
+```
+
+<div class="numbered">
+*Effects:* Repeatedly performs the following steps, in order:
+- Evaluates `try_acquire`. If the result is `true`, returns `true`. 
+- Blocks until the timeout expires or `counter >= 1`. If the timeout expired, returns `false`.
+</div>
+
+<div class="numbered">
+*Throws:* Timeout-related exceptions (33.2.4).
+</div>
+</blockquote>
+
+
+<blockquote class="ins">
+<b>33.� Coordination Types <span style="float: right;">[thread.coordination]</span></b>
+
+<div class="numbered">
+This section describes various concepts related to thread coordination, and defines the <dfn>coordination types</dfn> `latch` and `barrier`. These types facilitate concurrent computation performed by a number of threads, in one or more phases.
+</div>
+
+<div class="numbered">
+In this subclause, a synchronization point represents a condition that a thread may contribute to or wait for, potentially blocking until it is satisfied. A thread arrives at the synchronization point when it has an effect on the state of the condition, even if it does not cause it to become satisfied.
+</div>
+
+<div class="numbered">
+Concurrent invocations of the member functions of coordination types, other than their destructors, do not introduce data races.
+</div>
+</blockquote>
+
+<blockquote class="ins">
+<b>33.�.1 Latches <span style="float: right;">[thread.coordination.latch]</span></b>
+
+<div class="numbered">
+A latch is a thread coordination mechanism that allows any number of threads to block until an expected count is summed (exactly) by threads that arrived at the latch. The expected count is set when the latch is constructed. An individual latch is a single-use object; once the count has been reached, the latch cannot be reused. 
+</div>
+</blockquote>
+
+<blockquote class="ins">
+<b>33.�.1.1 Header `<latch>` synopsis <span style="float: right;">[thread.coordination.latch.synopsis]</span></b>
+
+<xmp>
+namespace std {
+  class latch
+}
+</xmp>
+</blockquote>
+
+<blockquote class="ins">
+<b>33.�.1.2 Class `latch` <span style="float: right;">[thread.coordination.latch.class]</span></b>
+
+<pre><code>
+namespace std {
+  class latch {
+  public:
+    explicit constexpr latch(ptrdiff_t expected);
+    ~latch();
+
+    latch(const latch&amp;) = delete;
+    latch(latch&amp;&amp;) = delete;
+    latch&amp; operator=(const latch&amp;) = delete;
+    latch&amp; operator=(latch&amp;&amp;) = delete;
+    
+    void arrive(ptrdiff_t update = 1);
+    bool try_wait() const noexcept;
+    void wait() const;
+    void arrive_and_wait(ptrdiff_t n update = 1);
+
+  private:
+    ptrdiff_t counter; <i>// exposition only</i>
+  };
+} 
+</code></pre>
+
+<div class="numbered">
+A `latch` maintains an internal counter that is initialized when the `latch` is created. Threads may block at the `latch`’s synchronization point, waiting for `counter` to be decremented to `0`.
+</div>
+
+```
+explicit constexpr latch(ptrdiff_t expected);
+```
+
+<div class="numbered">
+*Requires:* `expected >= 0`. 
+</div>
+
+<div class="numbered">
+*Effects:* `counter = expected`.
+</div>
+
+```
+~latch();
+```
+
+<div class="numbered">
+*Requires:* No threads are blocked at the synchronization point.
+</div>
+
+<div class="numbered">
+*Effects:* Destroys the latch.
+</div>
+
+<div class="numbered">
+*Remarks:* May be called even if some threads have not yet returned from functions that block at the synchronization point, provided that they are unblocked. [ *Note:* The destructor may block until all threads have exited invocations of `wait` on this object. — *end note* ]
+</div>
+
+
+```
+void arrive(ptrdiff_t update);
+```
+
+<div class="numbered">
+*Requires:* `counter >= update` and `update >= 0`.
+</div>
+
+<div class="numbered">
+*Effects:* Atomically decrements `counter` by `update`.
+</div>
+
+<div class="numbered">
+*Synchronization:* Synchronizes with the returns from all calls unblocked by the effects.
+</div>
+
+<div class="numbered">
+*Remarks:* Arrives at the synchronization point with `update` count.
+</div>
+
+```
+bool try_wait() const noexcept;
+```
+
+<div class="numbered">
+*Returns:* `counter == 0`. 
+</div>
+
+
+```
+void wait() const;
+```
+
+<div class="numbered">
+*Effects:* If `counter == 0`, returns immediately. Otherwise, blocks the calling thread at the synchronization point until `counter == 0`. 
+</div>
+
+```
+void arrive_and_wait(ptrdiff_t update);
+```
+
+<div class="numbered">
+*Effects:* Equivalent to `arrive(update); wait();`.
+</div>
+</blockquote>
+
+<blockquote class="ins">
+<b>33.�.2 Barriers <span style="float: right;">[thread.coordination.barrier]</span></b>
+
+<div class="numbered">
+A barrier is a thread coordination mechanism that allows at most an expected count of threads to block until that count is summed (exactly) by threads that arrived at the barrier in each of its successive phases. Once threads are released from blocking at the synchronization point for a phase, they can reuse the same barrier immediately in its next phase. [ *Note:* It is thus useful for managing repeated tasks, or phases of a larger task, that are handled by multiple threads. — *end note* ]
+</div>
+
+<div class="numbered">
+A barrier has a completion step that is a (possibly empty) set of effects associated with a phase of the barrier. When the member functions defined in this subclause arrive at the barrier, they have the following effects: 
+- When the expected number of threads for this phase have arrived at the barrier, one of those threads executes the barrier type's completion step. 
+- When the completion step is completed, all threads blocked at the synchronization point for this phase are unblocked and the barrier enters its next phase. The end of the completion step strongly happens before the returns from all calls unblocked by its completion.
+</div>
+</blockquote>
+
+<blockquote class="ins">
+<b>33.�.2.1 Header `<barrier>` synopsis <span style="float: right;">[thread.coordination.barrier.synopsis]</span></b>
+
+<pre><code>
+namespace std {
+  template&lt;class CompletionFunction = <i>implementation-defined</i>&gt;
+    class barrier;
+}
+</code></pre>
+</blockquote>
+
+<blockquote class="ins">
+<b>33.�.2.2 Class template `barrier` <span style="float: right;">[thread.coordination.barrier.class]</span></b>
+
+<pre><code>
+namespace std {
+  template&ltclass CompletionFunction&gt;
+  class barrier {
+  public:
+    using value_type = implementation-defined;
+
+    explicit barrier(ptrdiff_t expected,
+                     CompletionFunction f = CompletionFunction());
+    ~barrier();
+
+    barrier(const barrier&amp;) = delete;
+    barrier(barrier&amp;&amp;) = delete;
+    barrier&amp; operator=(const barrier&amp;) = delete;
+    barrier&amp; operator=(barrier&amp;&amp;) = delete;
+
+    [[nodiscard]] value_type arrive(ptrdiff_t update = 1);
+    bool try_wait(value_type) const;
+    void wait(value_type) const;
+
+    void arrive_and_wait();
+    void arrive_and_drop();
+
+  private:
+    CompletionFunction completion; <i>// exposition only</i>
+  };
+}
+</code></pre>
+
+<div class="numbered">
+A `barrier` is a barrier type with a completion step controlled by a function object. The completion step calls `completion`. Threads may block at the barrier's synchronization point for a phase, waiting for the expected sum contributions by threads that arrive in that phase.
+</div>
+
+<div class="numbered">
+`CompletionFunction` shall be `CopyConstructible` and `is_invocable_r_v<void, CompletionFunction>` shall be `true`.
+</div>
+
+<div class="numbered">
+`barrier::value_type` is an implementation-defined type that is `MoveConstructible` and `MoveAssignable`.
+</div>
+
+```
+explicit barrier(ptrdiff_t expected, CompletionFunction f);
+```
+
+<div class="numbered">
+*Requires:* `expected >= 0`, and `noexcept(f())` shall be `true`.
+</div>
+
+
+<div class="numbered">
+*Effects:* Initializes the barrier for `expected` number of threads in the first phase, and initializes `completion` with `std::move(f)`. [ *Note:* If `expected` is `0` this object may only be destroyed. — *end note* ]
+</div>
+
+
+```
+~barrier();
+```
+
+<div class="numbered">
+*Requires:* No threads are blocked at a synchronization point for any phase.
+</div>
+
+<div class="numbered">
+*Effects:* Destroys the barrier.
+</div>
+
+<div class="numbered">
+*Remarks:* May be called even if some threads have not yet returned from functions that block at a synchronization point, provided that they have unblocked. [ *Note:* The destructor may block until all threads have exited invocations of wait() on this object. — *end note* ] 
+</div>
+
+```
+[[nodiscard]] value_type arrive(ptrdiff_t update);
+```
+
+<div class="numbered">
+*Requires:* The expected count is not less than `update`. 
+</div>
+
+<div class="numbered">
+*Effects:* Constructs an object of type `value_type` that is associated with the `barrier`'s synchronization point for the current phase, then arrives `update` times at the synchronization point for the current phase.
+</div>
+
+<div class="numbered">
+*Synchronization:* The call to `arrive` strongly happens before the start of the completion step for the current phase.
+</div>
+
+<div class="numbered">
+*Returns:* The constructed object.
+</div>
+
+<div class="numbered">
+*Remarks:* This may cause the completion step to start.
+</div>
+
+
+```
+bool try_wait(value_type arrival) const;
+```
+
+<div class="numbered">
+*Requires:* `arrival` is associated with a synchronization point for the current or the immediately preceding phases of the `barrier`.
+</div>
+
+<div class="numbered">
+*Returns:* `true` if the synchronization point condition associated with `arrival` is satisfied, otherwise `false`.
+</div>
+
+
+```
+void wait(value_type arrival) const;
+```
+
+<div class="numbered">
+*Requires:* `arrival` is associated with a synchronization point for the current or the immediately preceding phases of the `barrier`.
+</div>
+
+<div class="numbered">
+*Effects:* Blocks at the synchronization point associated with `arrival` until the condition is satisfied.
+</div>
+
+```
+void arrive_and_wait();
+```
+
+<div class="numbered">
+*Effects:* Equivalent to `wait(arrive())`.
+</div>
+
+
+``` 
+void arrive_and_drop();
+```
+
+<div class="numbered">
+*Requires:* The expected number of threads for the current phase is not `0`. 
+</div>
+
+<div class="numbered">
+*Effects:* Decrements the expected number of threads for subsequent phases by `1`, then arrives at the synchronization point for the current phase.
+</div>
+
+<div class="numbered">
+*Synchronization:* The call to `arrive_and_drop` strongly happens before the start of the completion step for the current phase.
+</div>
+
+<div class="numbered">
+*Remarks:* This may cause the completion phase to start.
+</div>
+</blockquote>
+
+Create the following feature test macros:
+
+- `__cpp_lib_atomic_wait`
+- `__cpp_lib_semaphore`
+- `__cpp_lib_latch`
+- `__cpp_lib_barrier`
+
