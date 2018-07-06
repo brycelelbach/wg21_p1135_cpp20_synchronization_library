@@ -1,16 +1,16 @@
 <pre class='metadata'>
 Group: WG21
 Title: The C++20 Synchronization Library
-Status: P
+Status: D
 Shortname: P1135
-Revision: 0
+Revision: 1
 Audience: SG1, LEWG, LWG
 Issue Tracking: GitHub https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/issues
-URL: http://wg21.link/P1135r0
+URL: http://wg21.link/P1135r1
 Editor: Bryce Adelstein Lelbach, NVIDIA, brycelelbach@gmail.com
 Editor: Olivier Giroux, NVIDIA, ogiroux@nvidia.com
 Editor: JF Bastien, Apple, jfbastien@apple.com
-Date: 2018-06-12
+Date: 2018-07-05
 Markup Shorthands: markdown yes
 Toggle Diffs: yes
 No Abstract: yes
@@ -88,9 +88,9 @@ This paper is the unification of the wording for a series of related C++20
 proposals for introducing new synchronization and thread coordination
 facilities and enhancing existing ones:
 
-- [[P0514]]: Efficient `atomic` waiting and semaphores.
-- [[P0666]]: Latches and barriers.
-- [[P0995]]: `atomic_flag::test` and lockfree integral types.
+  - [[P0514r4]]: Efficient `atomic` waiting and semaphores.
+  - [[P0666r2]]: Latches and barriers.
+  - [[P0995r1]]: `atomic_flag::test` and lockfree integral types.
 
 Wording {#wording}
 ==================
@@ -428,8 +428,8 @@ template<class T>
 <div class="numbered">
 *Effects:* Repeatedly performs the following steps, in order: 
 
-- Evaluates `object->load(order) != old` then, if the result is `true`, returns.
-- Blocks until an implementation-defined condition has been met.
+  - Evaluates `object->load(order) != old` then, if the result is `true`, returns.
+  - Blocks until an implementation-defined condition has been met.
     [ *Note:* Consequently, it may unblock for reasons other than a call to a notifying function. — *end note* ]
 
 </div>
@@ -450,8 +450,8 @@ void atomic_wait_explicit(const atomic_flag* object,
 <div class="numbered">
 *Effects:* Repeatedly performs the following steps, in order: 
 
-- Evaluates `object->test(order) != old` then, if the result is `true`, returns.
-- Blocks until an implementation-defined condition has been met.
+  - Evaluates `object->test(order) != old` then, if the result is `true`, returns.
+  - Blocks until an implementation-defined condition has been met.
     [ *Note:* Consequently, it may unblock for reasons other than a call to a notifying function. — *end note* ]
 
 </div>
@@ -599,8 +599,10 @@ bool try_acquire();
 
 <div class="numbered">
 *Effects:*
-- With low probability, returns immediately. [ *Note:* An implementation should ensure that `try_acquire` does not consistently return `false` in the absence of contending acquisitions. — *end note* ] 
-- Otherwise, if `counter >= 1`, then `counter -= 1` is executed atomically.
+
+  - With low probability, returns immediately. [ *Note:* An implementation should ensure that `try_acquire` does not consistently return `false` in the absence of contending acquisitions. — *end note* ] 
+  - Otherwise, if `counter >= 1`, then `counter -= 1` is executed atomically.
+
 </div>
 
 <div class="numbered">
@@ -613,8 +615,10 @@ void acquire();
 
 <div class="numbered">
 *Effects:* Repeatedly performs the following steps, in order:
-- Evaluates `try_acquire`, then, if the result is `true`, returns. 
-- Blocks until `counter >= 1`.
+
+  - Evaluates `try_acquire`, then, if the result is `true`, returns. 
+  - Blocks until `counter >= 1`.
+
 </div>
 
 ```
@@ -626,8 +630,10 @@ template<class Rep, class Period>
 
 <div class="numbered">
 *Effects:* Repeatedly performs the following steps, in order:
-- Evaluates `try_acquire`. If the result is `true`, returns `true`. 
-- Blocks until the timeout expires or `counter >= 1`. If the timeout expired, returns `false`.
+
+  - Evaluates `try_acquire`. If the result is `true`, returns `true`. 
+  - Blocks until the timeout expires or `counter >= 1`. If the timeout expired, returns `false`.
+
 </div>
 
 <div class="numbered">
@@ -648,7 +654,7 @@ In this subclause, a synchronization point represents a condition that a thread 
 </div>
 
 <div class="numbered">
-Concurrent invocations of the member functions of coordination types, other than their destructors, do not introduce data races.
+Concurrent invocations of the member functions of [=coordination types=], other than their destructors, do not introduce data races.
 </div>
 </blockquote>
 
@@ -784,8 +790,10 @@ A barrier is a thread coordination mechanism that allows at most an expected cou
 
 <div class="numbered">
 A barrier has a completion step that is a (possibly empty) set of effects associated with a phase of the barrier. When the member functions defined in this subclause arrive at the barrier, they have the following effects: 
-- When the expected number of threads for this phase have arrived at the barrier, one of those threads executes the barrier type's completion step. 
-- When the completion step is completed, all threads blocked at the synchronization point for this phase are unblocked and the barrier enters its next phase. The end of the completion step strongly happens before the returns from all calls unblocked by its completion.
+
+  - When the expected number of threads for this phase have arrived at the barrier, one of those threads executes the barrier type's completion step. 
+  - When the completion step is completed, all threads blocked at the synchronization point for this phase are unblocked and the barrier enters its next phase. The end of the completion step strongly happens before the returns from all calls unblocked by its completion.
+
 </div>
 </blockquote>
 
@@ -956,10 +964,10 @@ void arrive_and_drop();
 
 Create the following feature test macros:
 
-- `__cpp_lib_atomic_lock_free_type_aliases`, which implies that `atomic_signed_lock_free` and `atomic_unsigned_lock_free` types are available.
-- `__cpp_lib_atomic_flag_test`, which implies the `test` methods and free functions for `atomic_flag` are available.
-- `__cpp_lib_atomic_wait`, which implies the `notify_*` and `wait` methods and free functions for `atomic` and `atomic_flag` and the `atomic_int_fast_wait_t` and `atomic_uint_fast_wait_t` types are available.
-- `__cpp_lib_semaphore`, which implies that `counting_semaphore` and `binary_semaphore` are available.
-- `__cpp_lib_latch`, which implies that `latch` is available.
-- `__cpp_lib_barrier`, which implies that `barrier` is available.
+  - `__cpp_lib_atomic_lock_free_type_aliases`, which implies that `atomic_signed_lock_free` and `atomic_unsigned_lock_free` types are available.
+  - `__cpp_lib_atomic_flag_test`, which implies the `test` methods and free functions for `atomic_flag` are available.
+  - `__cpp_lib_atomic_wait`, which implies the `notify_*` and `wait` methods and free functions for `atomic` and `atomic_flag` and the `atomic_int_fast_wait_t` and `atomic_uint_fast_wait_t` types are available.
+  - `__cpp_lib_semaphore`, which implies that `counting_semaphore` and `binary_semaphore` are available.
+  - `__cpp_lib_latch`, which implies that `latch` is available.
+  - `__cpp_lib_barrier`, which implies that `barrier` is available.
 
