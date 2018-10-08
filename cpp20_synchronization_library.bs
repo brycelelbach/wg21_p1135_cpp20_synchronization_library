@@ -14,7 +14,7 @@ Audience: LWG, LEWG, SG1
 Editor: Bryce Adelstein Lelbach, NVIDIA, brycelelbach@gmail.com
 Editor: Olivier Giroux, NVIDIA, ogiroux@nvidia.com
 Editor: JF Bastien, Apple, jfbastien@apple.com
-URL: http://wg21.link/P1135R1
+URL: https://wg21.link/P1135R1
 !Source: <a href="https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/blob/master/cpp20_synchronization_library.bs">GitHub</a>
 Issue Tracking: GitHub https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/issues
 Metadata Order: Author, This Version, Source, Issue Tracking, Project, Audience
