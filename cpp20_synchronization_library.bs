@@ -1,16 +1,22 @@
+<!--
+Copyright (c) 2018 NVIDIA Corporation 
+Author: Bryce Adelstein Lelbach <brycelelbach@gmail.com>
+
+Distributed under the Boost Software License v1.0 (boost.org/LICENSE_1_0.txt)
+-->
 <pre class='metadata'>
-Group: WG21
 Title: The C++20 Synchronization Library
-Status: D
 Shortname: D1135
 Revision: 1
+Status: D
+Group: WG21
 Audience: SG1, LEWG, LWG
-Issue Tracking: GitHub https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/issues
 URL: http://wg21.link/D1135R1
+!Source: <a href="https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/blob/master/cpp20_synchronization_library.bs">github.com/wg21_p1135_cpp20_synchronization_library/blob/master/cpp20_synchronization_library.bs</a>
+Issue Tracking: GitHub https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/issues
 Editor: Bryce Adelstein Lelbach, NVIDIA, brycelelbach@gmail.com
 Editor: Olivier Giroux, NVIDIA, ogiroux@nvidia.com
 Editor: JF Bastien, Apple, jfbastien@apple.com
-Date: 2018-07-05
 Markup Shorthands: markdown yes
 Toggle Diffs: yes
 No Abstract: yes
