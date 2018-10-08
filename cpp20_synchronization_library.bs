@@ -6,19 +6,20 @@ Distributed under the Boost Software License v1.0 (boost.org/LICENSE_1_0.txt)
 -->
 <pre class='metadata'>
 Title: The C++20 Synchronization Library
-Shortname: D1135
+Shortname: P1135
 Revision: 1
-Status: D
+Status: P
 Group: WG21
-Audience: SG1, LEWG, LWG
-URL: http://wg21.link/D1135R1
-!Source: <a href="https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/blob/master/cpp20_synchronization_library.bs">github.com/wg21_p1135_cpp20_synchronization_library/blob/master/cpp20_synchronization_library.bs</a>
-Issue Tracking: GitHub https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/issues
+Audience: LWG, LEWG, SG1
 Editor: Bryce Adelstein Lelbach, NVIDIA, brycelelbach@gmail.com
 Editor: Olivier Giroux, NVIDIA, ogiroux@nvidia.com
 Editor: JF Bastien, Apple, jfbastien@apple.com
+URL: http://wg21.link/P1135R1
+!Source: <a href="https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/blob/master/cpp20_synchronization_library.bs">GitHub</a>
+Issue Tracking: GitHub https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/issues
+Metadata Order: Author, This Version, Source, Issue Tracking, Project, Audience
 Markup Shorthands: markdown yes
-Toggle Diffs: yes
+Toggle Diffs: no
 No Abstract: yes
 Boilerplate: style-syntax-highlighting off
 </pre>
@@ -99,29 +100,34 @@ facilities and enhancing existing ones:
 
 ## Changelog ## {#changelog}
 
-**Revision 0:** Changes from [[P0514r4]], [[P0666r2]], and [[P0995r1]].
+**Revision 0:** Post Rapperswil changes from [[P0514r4]], [[P0666r2]], and [[P0995r1]] based on <a href="http://wiki.edg.com/bin/view/Wg21rapperswil2018/P0666">Rapperswil feedback</a>.
 
-- Refactored `basic_barrier` and `barrier` into one class with a default template parameter.
-- Refactored `basic_semaphore` and `counting_semaphore` into one class with a default template parameter.
-- Fixed count parameters to consistently default to 1.
+  - Refactored `basic_barrier` and `barrier` into one class with a default template parameter as suggested by LEWG at Rapperswil.
+  - Refactored `basic_semaphore` and `counting_semaphore` into one class with a default template parameter as suggested by LEWG at Rapperswil.
+  - Fixed `update` parameters in semaphore, latch, and barrier member functions to consistently default to 1 to resolve mistakes identified by LEWG at Rapperswil.
 
 **Revision 1:** Pre San Diego 2018 changes based on <a href="http://wiki.edg.com/bin/view/Wg21rapperswil2018/P0666">Rapperswil feedback</a> and <a href="http://lists.isocpp.org/lib-ext/2018/06/7755.php">a June discussion on the LEWG and SG1 mailing lists</a>.
 
-- Rebase against the latest working draft.
-- Added member function versions of `atomic_wait_*` and `atomic_notify_*`, for consistency. Refactored wording to accomodate this.
-- Renamed `latch::arrive_and_wait` and `barrier::arrive_and_wait` to `latch::sync` and `barrier::sync`, because LEWG at Rapperswil expected these methods to be the common use case and prefers they have a short name.
-- Renamed `latch::arrive` to `latch::count_down` to further separate and distinguish the `latch` and `barrier` APis.
-- Removed `barrier::try_wait` to resolve concerns raised during LEWG discussion at Rapperswil regarding its "maybe consuming" nature.
-- Required that `barrier::arrival_token` move constructor and move assignment operators are `noexcept` to resolve discussions in LEWG at Rapperswil regarding exceptions being thrown when using the asynchronous barrier APIs. 
-- Clarified that `counting_semaphore::release`, `latch::count_down`, `latch::sync`, `barrier::wait`, and `barrier::arrive_and_drop` throw nothing (but cannot be `noexcept`, because they have preconditions) to resolve discussions in LEWG at Rapperswil and on the mailing list.  
-- Made `counting_semaphore::acquire`, `counting_semaphore::try_acquire`, and `latch::wait` `noexcept`, because participants in the mailing list discussion preferred that synchronization operations not throw and that any resource acquisition failures be reported by throwing during construction of synchronization objects.
-- Made `counting_semaphore`, `latch`, and `barrier`'s constructors non `constexpr` and allowed it to throw `system_error` if the latch cannot be created, because participants in the mailing list discussion preferred that synchronization operations not throw and that any resource acquisition failures be reported by throwing during construction of synchronization objects.
+  - Added member function versions of `atomic_wait_*` and `atomic_notify_*`, for consistency. Refactored wording to accommodate this.
+  - Renamed the `atomic_flag` overloads of `atomic_wait` and `atomic_wait_explicit` to `atomic_flag_wait` and `atomic_flag_wait_explicit` for consistency and to leave the door open for future compatibility with C.
+  - Renamed `latch::arrive_and_wait` and `barrier::arrive_and_wait` to `latch::sync` and `barrier::sync`, because LEWG at Rapperswil expected these methods to be the common use case and prefers they have a short name.
+  - Renamed `latch::arrive` to `latch::count_down` to further separate and distinguish the `latch` and `barrier` interfaces.
+  - Removed `barrier::try_wait` to resolve concerns raised during LEWG discussion at Rapperswil regarding its "maybe consuming" nature.
+  - Required that `barrier::arrival_token`'s move constructor and move assignment operators are `noexcept` to resolve discussions in LEWG at Rapperswil regarding exceptions being thrown when using the split arrive and wait barrier interface. 
+  - Clarified that `counting_semaphore::release`, `latch::count_down`, `latch::sync`, `barrier::wait`, and `barrier::arrive_and_drop` throw nothing (but cannot be `noexcept`, because they have preconditions) to resolve discussions in LEWG at Rapperswil and on the mailing list.  
+  - Made `counting_semaphore::acquire`, `counting_semaphore::try_acquire`, and `latch::wait` `noexcept`, because participants in the mailing list discussion preferred that synchronization operations not throw and that any resource acquisition failures be reported by throwing during construction of synchronization objects.
+  - Made `counting_semaphore`, `latch`, and `barrier`'s constructors non `constexpr` and allowed them to throw `system_error` if the latch cannot be created, because participants in the mailing list discussion preferred that synchronization operations not throw and that any resource acquisition failures be reported by throwing during construction of synchronization objects.
 
 # Wording # {#wording}
 
+Note: The following changes are relative to the post-Rapperswil 2018 working draft of ISO/IEC 14882, 
+([[N4762]]).
+
 Note: The � character is used to denote a placeholder number which shall be selected by the editor.
 
-Modify the header synopsis for `<atomic>` in [**atomics.syn**] as follows:
+Add `<semaphore>`, `<latch>`, and `<barrier>` to Table 18 "C++ library headers" in <a href="http://eel.is/c++draft/headers">[**headers**]</a>.
+
+Modify the header synopsis for `<atomic>` in <a href="http://eel.is/c++draft/atomics.syn">[**atomics.syn**]</a> as follows:
 
 <blockquote>
 <b>29.2 Header `<atomic>` synopsis <span style="float: right;">[atomics.syn]</span></b>
@@ -201,16 +207,14 @@ namespace std {
   void atomic_flag_clear_explicit(volatile atomic_flag*, memory_order) noexcept;
   void atomic_flag_clear_explicit(atomic_flag*, memory_order) noexcept;
 </code></pre>
-<pre class="ins"><code>  void atomic_wait(const volatile atomic_flag* object, bool old) noexcept;</code></pre>
-<pre class="ins"><code>  void atomic_wait(const atomic_flag* object, bool old) noexcept;</code></pre>
-<pre class="ins"><code>  void atomic_wait_explicit(const volatile atomic_flag* object,</code></pre>
-<pre class="ins"><code>                            bool old, memory_order order) noexcept;</code></pre>
-<pre class="ins"><code>  void atomic_wait_explicit(const atomic_flag* object,</code></pre>
-<pre class="ins"><code>                            bool old, memory_order order) noexcept;</code></pre>
-<pre class="ins"><code>  void atomic_notify_one(volatile atomic_flag* object) noexcept;</code></pre>
-<pre class="ins"><code>  void atomic_notify_one(atomic_flag* object) noexcept;</code></pre>
-<pre class="ins"><code>  void atomic_notify_all(volatile atomic_flag* object) const noexcept;</code></pre>
-<pre class="ins"><code>  void atomic_notify_all(atomic_flag* object) const noexcept;</code></pre>
+<pre class="ins"><code>  void atomic_flag_wait(const volatile atomic_flag*, bool) noexcept;</code></pre>
+<pre class="ins"><code>  void atomic_flag_wait(const atomic_flag*, bool) noexcept;</code></pre>
+<pre class="ins"><code>  void atomic_flag_wait_explicit(const volatile atomic_flag*, bool, memory_order) noexcept;</code></pre>
+<pre class="ins"><code>  void atomic_flag_wait_explicit(const atomic_flag*, bool, memory_order) noexcept;</code></pre>
+<pre class="ins"><code>  void atomic_flag_notify_one(volatile atomic_flag*) noexcept;</code></pre>
+<pre class="ins"><code>  void atomic_flag_notify_one(atomic_flag*) noexcept;</code></pre>
+<pre class="ins"><code>  void atomic_flag_notify_all(volatile atomic_flag*) const noexcept;</code></pre>
+<pre class="ins"><code>  void atomic_flag_notify_all(atomic_flag*) const noexcept;</code></pre>
 <pre><code>
 &nbsp; #define ATOMIC_FLAG_INIT <i>see below</i>
 
@@ -221,7 +225,7 @@ namespace std {
 </code></pre>
 </blockquote>
 
-Modify [**atomics.alias**] as follows:
+Modify <a href="http://eel.is/c++draft/atomics.alias">[**atomics.alias**]</a> as follows:
 
 <blockquote>
 <b>29.3 Type aliases <span style="float: right;">[atomics.alias]</span></b>
@@ -233,19 +237,55 @@ The type aliases `atomic_intN_t`, `atomic_uintN_t`, `atomic_intptr_t`, and `atom
 <div class="ins">
 <div class="numbered">
 The type aliases `atomic_signed_lock_free` and `atomic_unsigned_lock_free` are defined to be specializations of `atomic` whose template arguments are integral types, respectively signed and unsigned, other than `bool`.
-`is_always_lock_free` shall be `true` for `atomic_signed_lock_free` and `atomic_unsigned_lock_free`. An implementation should choose the integral specialization of `atomic` for which the waiting and notifying functions are most efficient.
+`is_always_lock_free` shall be `true` for `atomic_signed_lock_free` and `atomic_unsigned_lock_free`. An implementation should choose the integral specialization of `atomic` for which the [=atomic waiting and notifying operations=] are most efficient.
 </div>
 
 <div class="numbered">
 The type aliases `atomic_int_fast_wait_t` and `atomic_uint_fast_wait_t` are integral atomic types.
-Implementations should ensure that invocations of waiting and notifying functions (29.7.1.�) with these types have the lowest performance overhead among integer types.
+Implementations should ensure that invocations of [=atomic waiting and notifying operations=] (29.�) with these types have the lowest performance overhead among integer types.
 </div>
 </div>
 </blockquote>
 
-Note: The reference to "waiting and notifying functions" in the above change should refer to the new [**atomic.types.wait**] subclause.
+Note: The reference to "[=atomic waiting and notifying operations=]" in the above change should refer to the new <a href="http://eel.is/c++draft/atomic.wait">[**atomic.wait**]</a> subclause.
 
-Modify [**atomics.types.generic**] as follows:
+Add a new subclause after <a href="http://eel.is/c++draft/atomics.lockfree">[**atomics.lockfree**]</a>:
+
+<blockquote class="ins">
+<b>29.� Waiting and notifying <span style="float: right;">[atomics.wait]</span></b>
+
+<div class="numbered">
+<dfn>Atomic waiting and notifying operations</dfn> provide a mechanism to wait for the value of an atomic object to change more efficiently than can be achieved with polling.
+</div>
+
+<div class="numbered">
+The following functions are <dfn>atomic waiting operations</dfn>:
+
+  - `atomic<T>::wait`.
+  - `atomic_flag::wait`.
+  - `atomic_wait` and `atomic_wait_explicit`.
+
+</div>
+
+<div class="numbered">
+The following functions are <dfn>atomic notifying operations</dfn>:
+
+  - `atomic<T>::notify_one` and `atomic<T>::notify_all`.
+  - `atomic_flag::notify_one` and `atomic_flag::notify_all`.
+  - `atomic_notify_one` and `atomic_notify_one_explicit`.
+  - `atomic_flag_notify_one` and `atomic_flag_notify_one_explicit`.
+  - `atomic_notify_all` and `atomic_notify_all_explicit`.
+  - `atomic_flag_notify_all` and `atomic_flag_notify_all_explicit`.
+
+</div>
+
+<div class="numbered">
+[=Atomic waiting operations=] in this facility may block until they are unblocked by [=atomic notifying operations=], according to each function’s effects.
+[ *Note:* Programs are not guaranteed to observe transient atomic values, an issue known as the A-B-A problem, resulting in continued blocking if a condition is only temporarily met. – *End note* ]
+</div>
+</blockquote>
+
+Modify <a href="http://eel.is/c++draft/atomics.types.generic">[**atomics.types.generic**]</a> as follows:
 
 <blockquote>
 <b>29.7 Class template `atomic` <span style="float: right;">[atomics.type.generic]</span></b>
@@ -274,8 +314,8 @@ namespace std {
     bool compare_exchange_strong(T&amp;, T, memory_order = memory_order::seq_cst) volatile noexcept;
     bool compare_exchange_strong(T&amp;, T, memory_order = memory_order::seq_cst) noexcept;
 </code></pre>
-<pre class="ins"><code>    void wait(T old, memory_order order = memory_order::seq_cst) const volatile noexcept;</code></pre>
-<pre class="ins"><code>    void wait(T old, memory_order order = memory_order::seq_cst) const noexcept;</code></pre>
+<pre class="ins"><code>    void wait(T old, memory_order = memory_order::seq_cst) const volatile noexcept;</code></pre>
+<pre class="ins"><code>    void wait(T old, memory_order = memory_order::seq_cst) const noexcept;</code></pre>
 <pre class="ins"><code>    void notify_one() const volatile noexcept;</code></pre>
 <pre class="ins"><code>    void notify_one() const noexcept;</code></pre>
 <pre class="ins"><code>    void notify_all() const volatile noexcept;</code></pre>
@@ -293,38 +333,29 @@ namespace std {
 </code></pre>
 </blockquote>
 
-Add a new subclause after [**atomics.types.operations**]:
+Add the following to the end of <a href="http://eel.is/c++draft/atomics.types.operations">[**atomics.types.operations**]</a>:
 
 <blockquote class="ins">
-<b>29.7.� Waiting and notifying operations <span style="float: right;">[atomics.types.wait]</span></b>
-
-<div class="numbered">
-The member functions in this subclause provide a mechanism to wait for the value of an atomic object to change more efficiently than can be achieved with polling.
-Waiting functions in this facility may block until they are unblocked by notifying functions, according to each function’s effects.
-[ *Note:* Programs are not guaranteed to observe transient atomic values, an issue known as the A-B-A problem, resulting in continued blocking if a condition is only temporarily met. – *End note* ]
-</div>
-
-<div class="numbered">
-The member functions `wait` are <dfn>waiting functions</dfn>.
-The functions `notify_one` and `notify_all` are <dfn>notifying functions</dfn>.
-</div>
-
 ```
 void wait(T old, memory_order order = memory_order::seq_cst) const volatile noexcept;
 void wait(T old, memory_order order = memory_order::seq_cst) const noexcept;
 ```
 
 <div class="numbered">
-*Requires:* The order argument shall not be `memory_order_release` nor `memory_order_acq_rel`.
+*Requires:* The `order` argument shall not be `memory_order_release` nor `memory_order_acq_rel`.
 </div>
 
 <div class="numbered">
 *Effects:* Repeatedly performs the following steps, in order: 
 
-- Evaluates `object->load(order) != old` then, if the result is `true`, returns.
-- Blocks until an implementation-defined condition has been met.
-    [ *Note:* Consequently, it may unblock for reasons other than a call to a notifying function. — *end note* ]
+  - Evaluates `object->load(order) != old` then, if the result is `true`, returns.
+  - Blocks until an implementation-defined condition has been met.
+    [ *Note:* Consequently, it may unblock for reasons other than an [=atomic notifying operation=]. — *end note* ]
 
+</div>
+
+<div class="numbered">
+*Remarks:* This function is an [=atomic waiting operation=].
 </div>
 
 ```
@@ -333,7 +364,11 @@ void notify_one() const noexcept;
 ```
 
 <div class="numbered">
-*Effects:* Unblocks up to execution of a waiting function that blocked after observing the result of an atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*this`, and `Y` happens before this call.
+*Effects:* Unblocks up to execution of an [=atomic waiting operation=] that blocked after observing the result of an atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*this`, and `Y` happens before this call.
+</div>
+
+<div class="numbered">
+*Remarks:* This function is an [=atomic notifying operation=].
 </div>
 
 ```
@@ -342,12 +377,16 @@ void notify_all() const noexcept;
 ```
 
 <div class="numbered">
-*Effects:* Unblocks each execution of a waiting function that blocked after observing the result of an atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*this`, and `Y` happens before this call.
+*Effects:* Unblocks each execution of an [=atomic waiting operation=] that blocked after observing the result of an atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*this`, and `Y` happens before this call.
+</div>
+
+<div class="numbered">
+*Remarks:* This function is an [=atomic notifying operation=].
 </div>
 
 </blockquote>
 
-Modify [**atomics.flag**] as follows:
+Modify <a href="http://eel.is/c++draft/atomics.flag">[**atomics.flag**]</a> as follows:
 
 <blockquote>
 <b>29.8 Flag type and operations <span style="float: right;">[atomics.flag]</span></b>
@@ -366,8 +405,8 @@ namespace std {
     void clear(memory_order = memory_order_seq_cst) volatile noexcept;
     void clear(memory_order = memory_order_seq_cst) noexcept;
 </code></pre>
-<pre class="ins"><code>    void wait(bool old, memory_order order = memory_order::seq_cst) const volatile noexcept;</code></pre>
-<pre class="ins"><code>    void wait(bool old, memory_order order = memory_order::seq_cst) const noexcept;</code></pre>
+<pre class="ins"><code>    void wait(bool, memory_order = memory_order::seq_cst) const volatile noexcept;</code></pre>
+<pre class="ins"><code>    void wait(bool, memory_order = memory_order::seq_cst) const noexcept;</code></pre>
 <pre class="ins"><code>    void notify_one() const volatile noexcept;</code></pre>
 <pre class="ins"><code>    void notify_one() const noexcept;</code></pre>
 <pre class="ins"><code>    void notify_all() const volatile noexcept;</code></pre>
@@ -398,16 +437,14 @@ namespace std {
   void atomic_flag_clear_explicit(atomic_flag*, memory_order) noexcept;
 </code></pre>
 <ins><xmp>
-  void atomic_wait(const volatile atomic_flag* object, bool old) noexcept;
-  void atomic_wait(const atomic_flag* object, bool old) noexcept;
-  void atomic_wait_explicit(const volatile atomic_flag* object,
-                            bool old, memory_order order) noexcept;
-  void atomic_wait_explicit(const atomic_flag* object,
-                            bool old, memory_order order) noexcept;
-  void atomic_notify_one(volatile atomic_flag* object) noexcept;
-  void atomic_notify_one(atomic_flag* object) noexcept;
-  void atomic_notify_all(volatile atomic_flag* object) const noexcept;
-  void atomic_notify_all(atomic_flag* object) const noexcept;
+  void atomic_flag_wait(const volatile atomic_flag*, bool) noexcept;
+  void atomic_flag_wait(const atomic_flag*, bool) noexcept;
+  void atomic_flag_wait_explicit(const volatile atomic_flag*, bool, memory_order) noexcept;
+  void atomic_flag_wait_explicit(const atomic_flag*, bool, memory_order) noexcept;
+  void atomic_flag_notify_one(volatile atomic_flag*) noexcept;
+  void atomic_flag_notify_one(atomic_flag*) noexcept;
+  void atomic_flag_notify_all(volatile atomic_flag*) const noexcept;
+  void atomic_flag_notify_all(atomic_flag*) const noexcept;
 </xmp></ins>
 <pre><code>
 &nbsp;
@@ -502,19 +539,13 @@ void atomic_flag::clear(memory_order order = memory_order_seq_cst) noexcept;
 `false`. Memory is affected according to the value of `order`.
 
 <div class="ins">
-
-<div class="numbered">
-The member functions `wait` are *waiting functions*.
-The functions `notify_one` and `notify_all` are *notifying functions*.
-</div>
-
 <xmp>
-void atomic_wait(const volatile atomic_flag* object, bool old) noexcept;
-void atomic_wait(const atomic_flag* object, bool old) noexcept;
-void atomic_wait_explicit(const volatile atomic_flag* object,
-                          bool old, memory_order order) noexcept;
-void atomic_wait_explicit(const atomic_flag* object,
-                          bool old, memory_order order) noexcept;
+void atomic_flag_wait(const volatile atomic_flag* object, bool old) noexcept;
+void atomic_flag_wait(const atomic_flag* object, bool old) noexcept;
+void atomic_flag_wait_explicit(const volatile atomic_flag* object,
+                               bool old, memory_order order) noexcept;
+void atomic_flag_wait_explicit(const atomic_flag* object,
+                               bool old, memory_order order) noexcept;
 void atomic_flag::wait(bool old,
                        memory_order order = memory_order::seq_cst) const volatile noexcept;
 void atomic_flag::wait(bool old,
@@ -522,7 +553,7 @@ void atomic_flag::wait(bool old,
 </xmp>
 
 <div class="numbered">
-*Requires:* The order argument shall not be `memory_order_release` nor `memory_order_acq_rel`.
+*Requires:* The `order` argument shall not be `memory_order_release` nor `memory_order_acq_rel`.
 </div>
 
 <div class="numbered">
@@ -530,35 +561,48 @@ void atomic_flag::wait(bool old,
 
   - Evaluates `object->load(order) != old` then, if the result is `true`, returns.
   - Blocks until an implementation-defined condition has been met.
-    [ *Note:* Consequently, it may unblock for reasons other than a call to a notifying function. — *end note* ]
+    [ *Note:* Consequently, it may unblock for reasons other than an [=atomic notifying operation=]. — *end note* ]
 
 </div>
+
+<div class="numbered">
+*Remarks:* This function is an [=atomic waiting operation=].
+</div>
+
 <xmp>
-void atomic_notify_one(volatile atomic_flag* object) noexcept;
-void atomic_notify_one(atomic_flag* object) noexcept;
-void atomic_flag::notify_one() volatile noexcept;
-void atomic_flag::notify_one() noexcept;
+void atomic_flag_notify_one(volatile atomic_flag* object) noexcept;
+void atomic_flag_notify_one(atomic_flag* object) noexcept;
+void atomic_flag::notify_one() const volatile noexcept;
+void atomic_flag::notify_one() const noexcept;
 </xmp>
 
 <div class="numbered">
-*Effects:* Unblocks up to execution of a waiting function that blocked after observing the result of an atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*object` or `*this`, and `Y` happens before this call.
+*Effects:* Unblocks up to one execution of a [=atomic waiting operation=] that blocked after observing the result of an atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*object` or `*this`, and `Y` happens before this call.
+</div>
+
+<div class="numbered">
+*Remarks:* This function is an [=atomic notifying operation=].
 </div>
 
 <xmp>
-void atomic_notify_all(volatile atomic_flag* object) const noexcept;
-void atomic_notify_all(atomic_flag* object) const noexcept;
+void atomic_flag_notify_all(volatile atomic_flag* object) const noexcept;
+void atomic_flag_notify_all(atomic_flag* object) const noexcept;
 void atomic_flag::notify_all() const volatile noexcept;
 void atomic_flag::notify_all() const noexcept;
 </xmp>
 
 <div class="numbered">
-*Effects:* Unblocks each execution of a waiting function that blocked after observing the result of an atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*object` or `*this`, and `Y` happens before this call.
+*Effects:* Unblocks each execution of a [=atomic waiting operation=] that blocked after observing the result of an atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*object` or `*this`, and `Y` happens before this call.
+</div>
+
+<div class="numbered">
+*Remarks:* This function is an [=atomic notifying operation=].
 </div>
 
 </div>
 </blockquote>
 
-Modify Table 135 "Thread support library summary" in [**thread.general**] as follows:
+Modify Table 135 "Thread support library summary" in <a href="http://eel.is/c++draft/thread.general">[**thread.general**]</a> as follows:
 
 <blockquote>
 <div style="text-align: center;">
@@ -576,7 +620,7 @@ Table 135 — Thread support library summary
 </table>
 </blockquote>
 
-Add two new subclauses after [**thread.condition**]:
+Add two new subclauses after <a href="http://eel.is/c++draft/thread.condition">[**thread.condition**]</a>:
 
 <blockquote class="ins">
 <b>30.� Semaphores <span style="float: right;">[thread.semaphore]</span></b>
@@ -1069,6 +1113,9 @@ void sync();
 *Effects:* Equivalent to `wait(arrive())`.
 </div>
 
+<div class="numbered">
+*Throws:* Nothing.
+</div>
 
 ``` 
 void arrive_and_drop();
