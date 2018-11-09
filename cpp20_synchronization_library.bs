@@ -6,14 +6,15 @@ Distributed under the Boost Software License v1.0 (boost.org/LICENSE_1_0.txt)
 -->
 <pre class='metadata'>
 Title: The C++20 Synchronization Library
-Shortname: P1135
-Revision: 1
-Status: P
+Shortname: D1135
+Revision: 2
+Status: D
 Group: WG21
 Audience: LWG, LEWG, SG1
 Editor: Bryce Adelstein Lelbach, NVIDIA, brycelelbach@gmail.com
 Editor: Olivier Giroux, NVIDIA, ogiroux@nvidia.com
 Editor: JF Bastien, Apple, jfbastien@apple.com
+Editor: Detlef Vollmann, dv@vollmann.ch
 URL: https://wg21.link/P1135R1
 !Source: <a href="https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/blob/master/cpp20_synchronization_library.bs">GitHub</a>
 Issue Tracking: GitHub https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/issues
@@ -67,10 +68,10 @@ div.numbered:before {
 div.newnumbered:before {
   content: "�";
 }
-div.numbered ul, div.newnumbered {
+div.numbered ul, div.newnumbered ul {
   counter-reset: list_item;
 }
-div.numbered li, div.newnumbered {
+div.numbered li, div.newnumbered li {
   margin-left: 3em;
 }
 div.numbered li:before, div.newnumbered li:before {
@@ -97,6 +98,7 @@ facilities and enhancing existing ones:
   - [[P0514r4]]: Efficient `atomic` waiting and semaphores.
   - [[P0666r2]]: Latches and barriers.
   - [[P0995r1]]: `atomic_flag::test` and lockfree integral types.
+  - [[P1258r0]]: Don't make C++ unimplementable for small CPUs.
 
 ## Changelog ## {#changelog}
 
@@ -117,6 +119,11 @@ facilities and enhancing existing ones:
   - Clarified that `counting_semaphore::release`, `latch::count_down`, `latch::sync`, `barrier::wait`, and `barrier::arrive_and_drop` throw nothing (but cannot be `noexcept`, because they have preconditions) to resolve discussions in LEWG at Rapperswil and on the mailing list.  
   - Made `counting_semaphore::acquire`, `counting_semaphore::try_acquire`, and `latch::wait` `noexcept`, because participants in the mailing list discussion preferred that synchronization operations not throw and that any resource acquisition failures be reported by throwing during construction of synchronization objects.
   - Made `counting_semaphore`, `latch`, and `barrier`'s constructors non `constexpr` and allowed them to throw `system_error` if the latch cannot be created, because participants in the mailing list discussion preferred that synchronization operations not throw and that any resource acquisition failures be reported by throwing during construction of synchronization objects.
+
+**Revision 2:** San Diego 2018 changes to incorporate [[P1258r0]] and pre-meeting feedback.
+
+  - Made `barrier::wait` take its `arrival_token` parameter by rvalue reference.
+  - Made the `atomic_signed_lock_free` and `atomic_unsigned_lock_free` types optional for freestanding implementations, as per [[P1258r0]].
 
 # Wording # {#wording}
 
@@ -237,7 +244,9 @@ The type aliases `atomic_intN_t`, `atomic_uintN_t`, `atomic_intptr_t`, and `atom
 <div class="ins">
 <div class="numbered">
 The type aliases `atomic_signed_lock_free` and `atomic_unsigned_lock_free` are defined to be specializations of `atomic` whose template arguments are integral types, respectively signed and unsigned, other than `bool`.
-`is_always_lock_free` shall be `true` for `atomic_signed_lock_free` and `atomic_unsigned_lock_free`. An implementation should choose the integral specialization of `atomic` for which the [=atomic waiting and notifying operations=] are most efficient.
+In <a href="http://eel.is/c++draft/intro.compliance#def:freestanding_implementation">freestanding implementations</a> (4.1), these aliases are optional. If an implementation provides a integral specialization of `atomic` other than `bool` for which `is_always_lock_free` is true, it shall define `atomic_signed_lock_free` and `atomic_unsigned_lock_free`. Otherwise, they shall not be defined.
+`is_always_lock_free` shall be `true` for `atomic_signed_lock_free` and `atomic_unsigned_lock_free`.
+An implementation which defines these type aliases should choose the integral specialization of `atomic` for which the [=atomic waiting and notifying operations=] are most efficient.
 </div>
 
 <div class="numbered">
@@ -281,7 +290,7 @@ The following functions are <dfn>atomic notifying operations</dfn>:
 
 <div class="numbered">
 [=Atomic waiting operations=] in this facility may block until they are unblocked by [=atomic notifying operations=], according to each function’s effects.
-[ *Note:* Programs are not guaranteed to observe transient atomic values, an issue known as the A-B-A problem, resulting in continued blocking if a condition is only temporarily met. – *End note* ]
+[ *Note:* Programs are not guaranteed to observe transient atomic values, an issue known as the A-B-A problem, resulting in continued blocking if a condition is only temporarily met. – *end note* ]
 </div>
 </blockquote>
 
@@ -1003,7 +1012,7 @@ namespace std {
     barrier&amp; operator=(barrier&amp;&amp;) = delete;
 
     [[nodiscard]] arrival_token arrive(ptrdiff_t update = 1);
-    void wait(arrival_token arrival) const;
+    void wait(arrival_token&& arrival) const;
 
     void sync();
     void arrive_and_drop();
@@ -1090,7 +1099,7 @@ explicit barrier(ptrdiff_t expected, CompletionFunction f);
 
 
 ```
-void wait(arrival_token arrival) const;
+void wait(arrival_token&& arrival) const;
 ```
 
 <div class="numbered">
@@ -1098,7 +1107,7 @@ void wait(arrival_token arrival) const;
 </div>
 
 <div class="numbered">
-*Effects:* Blocks at the synchronization point associated with `arrival` until the condition is satisfied.
+*Effects:* Blocks at the synchronization point associated with `std::move(arrival)` until the condition is satisfied.
 </div>
 
 <div class="numbered">
