@@ -6,16 +6,16 @@ Distributed under the Boost Software License v1.0 (boost.org/LICENSE_1_0.txt)
 -->
 <pre class='metadata'>
 Title: The C++20 Synchronization Library
-Shortname: P1135
-Revision: 2
-Status: P
+Shortname: D1135
+Revision: 3
+Status: D
 Group: WG21
-Audience: LWG, LEWG, SG1
+Audience: LWG
 Editor: Bryce Adelstein Lelbach, NVIDIA, brycelelbach@gmail.com
 Editor: Olivier Giroux, NVIDIA, ogiroux@nvidia.com
 Editor: JF Bastien, Apple, jfbastien@apple.com
 Editor: Detlef Vollmann, dv@vollmann.ch
-URL: https://wg21.link/P1135R2
+URL: https://wg21.link/P1135R3
 !Source: <a href="https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/blob/master/cpp20_synchronization_library.bs">GitHub</a>
 Issue Tracking: GitHub https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/issues
 Metadata Order: Author, This Version, Source, Issue Tracking, Project, Audience
@@ -102,33 +102,42 @@ facilities and enhancing existing ones:
 
 ## Changelog ## {#changelog}
 
-**Revision 0:** Post Rapperswil changes from [[P0514r4]], [[P0666r2]], and [[P0995r1]] based on <a href="http://wiki.edg.com/bin/view/Wg21rapperswil2018/P0666">Rapperswil feedback</a>.
+**Revision 0:** Post Rapperswil 2018 changes from [[P0514r4]], [[P0666r2]], and [[P0995r1]] based on <a href="http://wiki.edg.com/bin/view/Wg21rapperswil2018/P0666">Rapperswil 2018 LEWG feedback</a>.
 
-  - Refactored `basic_barrier` and `barrier` into one class with a default template parameter as suggested by LEWG at Rapperswil.
-  - Refactored `basic_semaphore` and `counting_semaphore` into one class with a default template parameter as suggested by LEWG at Rapperswil.
-  - Fixed `update` parameters in semaphore, latch, and barrier member functions to consistently default to 1 to resolve mistakes identified by LEWG at Rapperswil.
+  - Refactored `basic_barrier` and `barrier` into one class with a default template parameter as suggested by LEWG at Rapperswil 2018.
+  - Refactored `basic_semaphore` and `counting_semaphore` into one class with a default template parameter as suggested by LEWG at Rapperswil 2018.
+  - Fixed `update` parameters in semaphore, latch, and barrier member functions to consistently default to 1 to resolve mistakes identified by LEWG at Rapperswil 2018.
 
-**Revision 1:** Pre San Diego 2018 changes based on <a href="http://wiki.edg.com/bin/view/Wg21rapperswil2018/P0666">Rapperswil feedback</a> and <a href="http://lists.isocpp.org/lib-ext/2018/06/7755.php">a June discussion on the LEWG and SG1 mailing lists</a>.
+**Revision 1:** Pre San Diego 2018 changes based on <a href="http://wiki.edg.com/bin/view/Wg21rapperswil2018/P0666">Rapperswil 2018 LEWG feedback</a> and <a href="http://lists.isocpp.org/lib-ext/2018/06/7755.php">a June discussion on the LEWG and SG1 mailing lists</a>.
 
   - Added member function versions of `atomic_wait_*` and `atomic_notify_*`, for consistency. Refactored wording to accommodate this.
   - Renamed the `atomic_flag` overloads of `atomic_wait` and `atomic_wait_explicit` to `atomic_flag_wait` and `atomic_flag_wait_explicit` for consistency and to leave the door open for future compatibility with C.
-  - Renamed `latch::arrive_and_wait` and `barrier::arrive_and_wait` to `latch::sync` and `barrier::sync`, because LEWG at Rapperswil expected these methods to be the common use case and prefers they have a short name.
+  - Renamed `latch::arrive_and_wait` and `barrier::arrive_and_wait` to `latch::sync` and `barrier::sync`, because LEWG at Rapperswil 2018 expected these methods to be the common use case and prefers they have a short name.
   - Renamed `latch::arrive` to `latch::count_down` to further separate and distinguish the `latch` and `barrier` interfaces.
-  - Removed `barrier::try_wait` to resolve concerns raised during LEWG discussion at Rapperswil regarding its "maybe consuming" nature.
-  - Required that `barrier::arrival_token`'s move constructor and move assignment operators are `noexcept` to resolve discussions in LEWG at Rapperswil regarding exceptions being thrown when using the split arrive and wait barrier interface. 
-  - Clarified that `counting_semaphore::release`, `latch::count_down`, `latch::sync`, `barrier::wait`, and `barrier::arrive_and_drop` throw nothing (but cannot be `noexcept`, because they have preconditions) to resolve discussions in LEWG at Rapperswil and on the mailing list.  
+  - Removed `barrier::try_wait` to resolve concerns raised during LEWG discussion at Rapperswil 2018 regarding its "maybe consuming" nature.
+  - Required that `barrier::arrival_token`'s move constructor and move assignment operators are `noexcept` to resolve discussions in LEWG at Rapperswil 2018 regarding exceptions being thrown when using the split arrive and wait barrier interface. 
   - Made `counting_semaphore::acquire`, `counting_semaphore::try_acquire`, and `latch::wait` `noexcept`, because participants in the mailing list discussion preferred that synchronization operations not throw and that any resource acquisition failures be reported by throwing during construction of synchronization objects.
-  - Made `counting_semaphore`, `latch`, and `barrier`'s constructors non `constexpr` and allowed them to throw `system_error` if the latch cannot be created, because participants in the mailing list discussion preferred that synchronization operations not throw and that any resource acquisition failures be reported by throwing during construction of synchronization objects.
+  - Made `counting_semaphore`, `latch`, and `barrier`'s constructors non `constexpr` and allowed them to throw `system_error` if the object cannot be created, because participants in the mailing list discussion preferred that synchronization operations not throw and that any resource acquisition failures be reported by throwing during construction of synchronization objects.
+  - Clarified that `counting_semaphore::release`, `latch::count_down`, `latch::sync`, `barrier::wait`, `barrier::sync`, and `barrier::arrive_and_drop` throw nothing (but cannot be `noexcept`, because they have preconditions) to resolve discussions in LEWG at Rapperswil 2018 and on the mailing list.  
 
 **Revision 2:** San Diego 2018 changes to incorporate [[P1258r0]] and pre-meeting feedback.
 
   - Made `barrier::wait` take its `arrival_token` parameter by rvalue reference.
   - Made the `atomic_signed_lock_free` and `atomic_unsigned_lock_free` types optional for freestanding implementations, as per [[P1258r0]].
 
+**Revision 3:** Pre Kona 2019 changes based on <a href="http://wiki.edg.com/bin/view/Wg21sandiego2018/P1135">San Diego 2018 LEWG feedback</a>.
+
+  - Renamed `latch::sync` and `barrier::sync` back to `latch::arrive_and_wait` and `barrier::arrive_and_wait`, because this name had the strongest consensus in LEWG at San Diego 2018.
+  - Removed `atomic_int_fast_wait_t` and `atomic_uint_fast_wait_t`, because LEWG at San Diego 2018 felt that the use case was uncommon and the types had high potential for misuse.
+  - Made `counting_semaphore::acquire` and `latch::wait` non `noexcept` again, because LEWG at San Diego 2018 desired `constexpr` constructors for new synchronization objects to allow synchronization during program initialization and to maintain consistency with existing synchronization objects like `mutex`.
+  - Made `counting_semaphore`, `latch`, and `barrier`'s constructors `constexpr` again, because LEWG at San Diego 2018 desired `constexpr` constructors for new synchronization objects to allow synchronization during program initialization and to maintain consistency with existing synchronization objects like `mutex`.
+  - Clarified that `counting_semaphore::release`, `latch::count_down`, `latch::arrive_and_wait`, `barrier::wait`, `barrier::arrive_and_wait`, and `barrier::arrive_and_drop` may throw `system_error` exceptions, which is an implication of the constructors of said objects being `constexpr` because any underlying system errors must be reported on operations not during construction.
+  - Added missing `atomic<T>::wait` and `atomic<T>::notify_*` member functions to the class synopses for the `atomic<T>` integral, floating-point, and pointer specializations.
+  - Fixed `atomic<T>::notify_*` member functions to be non `const`.
+
 # Wording # {#wording}
 
-Note: The following changes are relative to the post-Rapperswil 2018 working draft of ISO/IEC 14882, 
-([[N4762]]).
+Note: The following changes are relative to the post San Diego 2018 working draft of ISO/IEC 14882, ([[N4791]]).
 
 Note: The � character is used to denote a placeholder number which shall be selected by the editor.
 
@@ -137,28 +146,16 @@ Add `<semaphore>`, `<latch>`, and `<barrier>` to Table 18 "C++ library headers" 
 Modify the header synopsis for `<atomic>` in <a href="http://eel.is/c++draft/atomics.syn">[**atomics.syn**]</a> as follows:
 
 <blockquote>
-<b>29.2 Header `<atomic>` synopsis <span style="float: right;">[atomics.syn]</span></b>
+<b>30.2 Header `<atomic>` synopsis <span style="float: right;">[atomics.syn]</span></b>
 
 <pre><code>
 namespace std {
   <i>// ...</i>
   
-  <i>// 29.8, non-member functions</i>
+  <i>// 30.8, non-member functions</i>
   <i>// ...</i>
 
 </code></pre>
-<pre class="ins"><code>  template&lt;class T&gt; </code></pre>
-<pre class="ins"><code>    void atomic_notify_one(const volatile atomic&lt;T&gt;*);</code></pre>
-<pre class="ins"><code>  template&lt;class T&gt; </code></pre>
-<pre class="ins"><code>    void atomic_notify_one(const atomic&lt;T&gt;*);</code></pre>
-<pre class="ins"><code>  void atomic_notify_one(const volatile atomic_flag*);</code></pre>
-<pre class="ins"><code>  void atomic_notify_one(const atomic_flag*);</code></pre>
-<pre class="ins"><code>  template&lt;class T&gt; </code></pre>
-<pre class="ins"><code>    void atomic_notify_all(const volatile atomic&lt;T&gt;*);</code></pre>
-<pre class="ins"><code>  template&lt;class T&gt; </code></pre>
-<pre class="ins"><code>    void atomic_notify_all(const atomic&lt;T&gt;*);</code></pre>
-<pre class="ins"><code>  void atomic_notify_all(const volatile atomic_flag*);</code></pre>
-<pre class="ins"><code>  void atomic_notify_all(const atomic_flag*);</code></pre>
 <pre class="ins"><code>  template&lt;class T&gt; </code></pre>
 <pre class="ins"><code>    void atomic_wait(const volatile atomic&lt;T&gt;*, </code></pre>
 <pre class="ins"><code>                     typename atomic&lt;T&gt;::value_type);</code></pre>
@@ -173,9 +170,21 @@ namespace std {
 <pre class="ins"><code>    void atomic_wait_explicit(const atomic&lt;T&gt;*, </code></pre>
 <pre class="ins"><code>                              typename atomic&lt;T&gt;::value_type,</code></pre>
 <pre class="ins"><code>                              memory_order);</code></pre>
+<pre class="ins"><code>  template&lt;class T&gt; </code></pre>
+<pre class="ins"><code>    void atomic_notify_one(volatile atomic&lt;T&gt;*);</code></pre>
+<pre class="ins"><code>  template&lt;class T&gt; </code></pre>
+<pre class="ins"><code>    void atomic_notify_one(atomic&lt;T&gt;*);</code></pre>
+<pre class="ins"><code>  void atomic_notify_one(volatile atomic_flag*);</code></pre>
+<pre class="ins"><code>  void atomic_notify_one(atomic_flag*);</code></pre>
+<pre class="ins"><code>  template&lt;class T&gt; </code></pre>
+<pre class="ins"><code>    void atomic_notify_all(volatile atomic&lt;T&gt;*);</code></pre>
+<pre class="ins"><code>  template&lt;class T&gt; </code></pre>
+<pre class="ins"><code>    void atomic_notify_all(atomic&lt;T&gt;*);</code></pre>
+<pre class="ins"><code>  void atomic_notify_all(volatile atomic_flag*);</code></pre>
+<pre class="ins"><code>  void atomic_notify_all(atomic_flag*);</code></pre>
 <pre></code>
 &nbsp;
-&nbsp; <i>// 29.3, type aliases</i>
+&nbsp; <i>// 30.3, type aliases</i>
   <i>// ...</i>
    
   using atomic_intptr_t       = atomic&lt;intptr_t&gt;;
@@ -186,16 +195,13 @@ namespace std {
   using atomic_uintmax_t      = atomic&lt;uintmax_t&gt;;
  
 </code></pre>
-<pre class="ins"><code>  using atomic_int_fast_wait_t  = atomic&lt;<i>implementation-defined</i>&gt;;</code></pre>
-<pre class="ins"><code>  using atomic_uint_fast_wait_t = atomic&lt;<i>implementation-defined</i>&gt;;</code></pre>
-<pre class="ins"><code></code></pre>
 <pre class="ins"><code>  using atomic_signed_lock_free   = <i>see below</i>;</code></pre>
 <pre class="ins"><code>  using atomic_unsigned_lock_free = <i>see below</i>;</code></pre>
 <pre><code>
 &nbsp;
   <i>// ...</i>
 
-  <i>// 29.8, flag type and operations</i>
+  <i>// 30.9, flag type and operations</i>
   struct atomic_flag;
 </code></pre>
 <ins><xmp>
@@ -225,7 +231,7 @@ namespace std {
 <pre><code>
 &nbsp; #define ATOMIC_FLAG_INIT <i>see below</i>
 
-  <i>// 29.9, fences</i>
+  <i>// 30.10, fences</i>
   extern "C" void atomic_thread_fence(memory_order) noexcept;
   extern "C" void atomic_signal_fence(memory_order) noexcept;
 }
@@ -235,7 +241,7 @@ namespace std {
 Modify <a href="http://eel.is/c++draft/atomics.alias">[**atomics.alias**]</a> as follows:
 
 <blockquote>
-<b>29.3 Type aliases <span style="float: right;">[atomics.alias]</span></b>
+<b>30.3 Type aliases <span style="float: right;">[atomics.alias]</span></b>
 
 <div class="numbered">
 The type aliases `atomic_intN_t`, `atomic_uintN_t`, `atomic_intptr_t`, and `atomic_uintptr_t` are defined if and only if `intN_t`, `uintN_t`, `intptr_t`, and `uintptr_t` are defined, respectively.
@@ -248,11 +254,6 @@ In <a href="http://eel.is/c++draft/intro.compliance#def:freestanding_implementat
 `is_always_lock_free` shall be `true` for `atomic_signed_lock_free` and `atomic_unsigned_lock_free`.
 An implementation which defines these type aliases should choose the integral specialization of `atomic` for which the [=atomic waiting and notifying operations=] are most efficient.
 </div>
-
-<div class="numbered">
-The type aliases `atomic_int_fast_wait_t` and `atomic_uint_fast_wait_t` are integral atomic types.
-Implementations should ensure that invocations of [=atomic waiting and notifying operations=] (29.�) with these types have the lowest performance overhead among integer types.
-</div>
 </div>
 </blockquote>
 
@@ -261,7 +262,7 @@ Note: The reference to "[=atomic waiting and notifying operations=]" in the abov
 Add a new subclause after <a href="http://eel.is/c++draft/atomics.lockfree">[**atomics.lockfree**]</a>:
 
 <blockquote class="ins">
-<b>29.� Waiting and notifying <span style="float: right;">[atomics.wait]</span></b>
+<b>30.� Waiting and notifying <span style="float: right;">[atomics.wait]</span></b>
 
 <div class="numbered">
 <dfn>Atomic waiting and notifying operations</dfn> provide a mechanism to wait for the value of an atomic object to change more efficiently than can be achieved with polling.
@@ -297,13 +298,13 @@ The following functions are <dfn>atomic notifying operations</dfn>:
 Modify <a href="http://eel.is/c++draft/atomics.types.generic">[**atomics.types.generic**]</a> as follows:
 
 <blockquote>
-<b>29.7 Class template `atomic` <span style="float: right;">[atomics.type.generic]</span></b>
+<b>30.7 Class template `atomic` <span style="float: right;">[atomics.types.generic]</span></b>
 
 <pre><code>
 namespace std {
   template&lt;class T&gt; struct atomic {
     using value_type = T;
-    static constexpr bool is_always_lock_free = implementation-defined;
+    static constexpr bool is_always_lock_free = <i>implementation-defined</i>;
     bool is_lock_free() const volatile noexcept;
     bool is_lock_free() const noexcept;
     void store(T, memory_order = memory_order::seq_cst) volatile noexcept;
@@ -325,10 +326,10 @@ namespace std {
 </code></pre>
 <pre class="ins"><code>    void wait(T old, memory_order = memory_order::seq_cst) const volatile noexcept;</code></pre>
 <pre class="ins"><code>    void wait(T old, memory_order = memory_order::seq_cst) const noexcept;</code></pre>
-<pre class="ins"><code>    void notify_one() const volatile noexcept;</code></pre>
-<pre class="ins"><code>    void notify_one() const noexcept;</code></pre>
-<pre class="ins"><code>    void notify_all() const volatile noexcept;</code></pre>
-<pre class="ins"><code>    void notify_all() const noexcept;</code></pre>
+<pre class="ins"><code>    void notify_one() volatile noexcept;</code></pre>
+<pre class="ins"><code>    void notify_one() noexcept;</code></pre>
+<pre class="ins"><code>    void notify_all() volatile noexcept;</code></pre>
+<pre class="ins"><code>    void notify_all() noexcept;</code></pre>
 <pre><code>
 &nbsp;   atomic() noexcept = default;
     constexpr atomic(T) noexcept;
@@ -368,8 +369,8 @@ void wait(T old, memory_order order = memory_order::seq_cst) const noexcept;
 </div>
 
 ```
-void notify_one() const volatile noexcept;
-void notify_one() const noexcept;
+void notify_one() volatile noexcept;
+void notify_one() noexcept;
 ```
 
 <div class="numbered">
@@ -381,8 +382,8 @@ void notify_one() const noexcept;
 </div>
 
 ```
-void notify_all() const volatile noexcept;
-void notify_all() const noexcept;
+void notify_all() volatile noexcept;
+void notify_all() noexcept;
 ```
 
 <div class="numbered">
@@ -392,13 +393,260 @@ void notify_all() const noexcept;
 <div class="numbered">
 *Remarks:* This function is an [=atomic notifying operation=].
 </div>
+</blockquote>
 
+Modify <a href="http://eel.is/c++draft/atomics.types.int#1">[**atomics.types.int**] paragraph 1</a> as follows:
+
+<blockquote>
+<b>30.7.2 Specializations for integers <span style="float: right;">[atomics.types.int]</span></b>
+
+<div class="numbered">
+There are specializations of the `atomic` class template for the integral types `char`, `signed char`, `unsigned char`, `short`, `unsigned short`, `int`, `unsigned int`, `long`, `unsigned long`, `long long`, `unsigned long long`, `char8_t`, `char16_t`, `char32_t`, `wchar_t`, and any other types needed by the typedefs in the header `<cstdint>`.
+For each such type <code><i>integral</i></code>, the specialization <code>atomic&lt;<i>integral</i>&gt;</code> provides additional atomic operations appropriate to integral types.
+[ *Note:* For the specialization `atomic<bool>`, see <a href="http://eel.is/c++draft/atomics.types.generic">30.7</a>. — *end note* ]
+</div>
+
+<pre><code>
+namespace std {
+  template&lt;&gt; struct atomic&lt;<i>integral</i>&gt; {
+    using value_type = <i>integral</i>;
+    using difference_type = value_type;
+    static constexpr bool is_always_lock_free = <i>implementation-defined</i>;
+    bool is_lock_free() const volatile noexcept;
+    bool is_lock_free() const noexcept;
+    void store(<i>integral</i>, memory_order = memory_order::seq_cst) volatile noexcept;
+    void store(<i>integral</i>, memory_order = memory_order::seq_cst) noexcept;
+    <i>integral</i> load(memory_order = memory_order::seq_cst) const volatile noexcept;
+    <i>integral</i> load(memory_order = memory_order::seq_cst) const noexcept;
+    operator <i>integral</i>() const volatile noexcept;
+    operator <i>integral</i>() const noexcept;
+    <i>integral</i> exchange(<i>integral</i>, memory_order = memory_order::seq_cst) volatile noexcept;
+    <i>integral</i> exchange(<i>integral</i>, memory_order = memory_order::seq_cst) noexcept;
+    bool compare_exchange_weak(<i>integral</i>&amp;, <i>integral</i>,
+                               memory_order, memory_order) volatile noexcept;
+    bool compare_exchange_weak(<i>integral</i>&amp;, <i>integral</i>,
+                               memory_order, memory_order) noexcept;
+    bool compare_exchange_strong(<i>integral</i>&amp;, <i>integral</i>,
+                                 memory_order, memory_order) volatile noexcept;
+    bool compare_exchange_strong(<i>integral</i>&amp;, <i>integral</i>,
+                                 memory_order, memory_order) noexcept;
+    bool compare_exchange_weak(<i>integral</i>&amp;, <i>integral</i>,
+                               memory_order = memory_order::seq_cst) volatile noexcept;
+    bool compare_exchange_weak(<i>integral</i>&amp;, <i>integral</i>,
+                               memory_order = memory_order::seq_cst) noexcept;
+    bool compare_exchange_strong(<i>integral</i>&amp;, <i>integral</i>,
+                                 memory_order = memory_order::seq_cst) volatile noexcept;
+    bool compare_exchange_strong(<i>integral</i>&amp;, <i>integral</i>,
+                                 memory_order = memory_order::seq_cst) noexcept;
+</code></pre>
+<pre class="ins"><code>    void wait(<i>integral</i> old, memory_order = memory_order::seq_cst) const volatile noexcept;</code></pre>
+<pre class="ins"><code>    void wait(<i>integral</i> old, memory_order = memory_order::seq_cst) const noexcept;</code></pre>
+<pre class="ins"><code>    void notify_one() volatile noexcept;</code></pre>
+<pre class="ins"><code>    void notify_one() noexcept;</code></pre>
+<pre class="ins"><code>    void notify_all() volatile noexcept;</code></pre>
+<pre class="ins"><code>    void notify_all() noexcept;</code></pre>
+<pre><code>
+&nbsp;   <i>integral</i> fetch_add(<i>integral</i>, memory_order = memory_order::seq_cst) volatile noexcept;
+    <i>integral</i> fetch_add(<i>integral</i>, memory_order = memory_order::seq_cst) noexcept;
+    <i>integral</i> fetch_sub(<i>integral</i>, memory_order = memory_order::seq_cst) volatile noexcept;
+    <i>integral</i> fetch_sub(<i>integral</i>, memory_order = memory_order::seq_cst) noexcept;
+    <i>integral</i> fetch_and(<i>integral</i>, memory_order = memory_order::seq_cst) volatile noexcept;
+    <i>integral</i> fetch_and(<i>integral</i>, memory_order = memory_order::seq_cst) noexcept;
+    <i>integral</i> fetch_or(<i>integral</i>, memory_order = memory_order::seq_cst) volatile noexcept;
+    <i>integral</i> fetch_or(<i>integral</i>, memory_order = memory_order::seq_cst) noexcept;
+    <i>integral</i> fetch_xor(<i>integral</i>, memory_order = memory_order::seq_cst) volatile noexcept;
+    <i>integral</i> fetch_xor(<i>integral</i>, memory_order = memory_order::seq_cst) noexcept;
+
+    atomic() noexcept = default;
+    constexpr atomic(<i>integral</i>) noexcept;
+    atomic(const atomic&amp;) = delete;
+    atomic&amp; operator=(const atomic&amp;) = delete;
+    atomic&amp; operator=(const atomic&amp;) volatile = delete;
+    <i>integral</i> operator=(<i>integral</i>) volatile noexcept;
+    <i>integral</i> operator=(<i>integral</i>) noexcept;
+
+    <i>integral</i> operator++(int) volatile noexcept;
+    <i>integral</i> operator++(int) noexcept;
+    <i>integral</i> operator--(int) volatile noexcept;
+    <i>integral</i> operator--(int) noexcept;
+    <i>integral</i> operator++() volatile noexcept;
+    <i>integral</i> operator++() noexcept;
+    <i>integral</i> operator--() volatile noexcept;
+    <i>integral</i> operator--() noexcept;
+    <i>integral</i> operator+=(<i>integral</i>) volatile noexcept;
+    <i>integral</i> operator+=(<i>integral</i>) noexcept;
+    <i>integral</i> operator-=(<i>integral</i>) volatile noexcept;
+    <i>integral</i> operator-=(<i>integral</i>) noexcept;
+    <i>integral</i> operator&amp;=(<i>integral</i>) volatile noexcept;
+    <i>integral</i> operator&amp;=(<i>integral</i>) noexcept;
+    <i>integral</i> operator|=(<i>integral</i>) volatile noexcept;
+    <i>integral</i> operator|=(<i>integral</i>) noexcept;
+    <i>integral</i> operator^=(<i>integral</i>) volatile noexcept;
+    <i>integral</i> operator^=(<i>integral</i>) noexcept;
+  };
+}
+</code></pre>
+</blockquote>
+
+Modify <a href="http://eel.is/c++draft/atomics.types.float#1">[**atomics.types.float**] paragraph 1</a> as follows:
+
+<blockquote>
+<b>30.7.3 Specializations for floating-point types <span style="float: right;">[atomics.types.float]</span></b>
+
+<div class="numbered">
+There are specializations of the `atomic` class template for the floating-point types `float`, `double`, and `long double`.
+For each such type <code><i>floating-point</i></code>, the specialization <code>atomic&lt;<i>floating-point</i>&gt;</code> provides additional atomic operations appropriate to floating-point types.
+</div>
+
+<pre><code>
+namespace std {
+  template&lt;&gt; struct atomic&lt;<i>floating-point</i>&gt; {
+    using value_type = <i>floating-point</i>;
+    using difference_type = value_type;
+    static constexpr bool is_always_lock_free = <i>implementation-defined</i>;
+    bool is_lock_free() const volatile noexcept;
+    bool is_lock_free() const noexcept;
+    void store(<i>floating-point</i>, memory_order = memory_order::seq_cst) volatile noexcept;
+    void store(<i>floating-point</i>, memory_order = memory_order::seq_cst) noexcept;
+    <i>floating-point</i> load(memory_order = memory_order::seq_cst) const volatile noexcept;
+    <i>floating-point</i> load(memory_order = memory_order::seq_cst) const noexcept;
+    operator <i>floating-point</i>() const volatile noexcept;
+    operator <i>floating-point</i>() const noexcept;
+    <i>floating-point</i> exchange(<i>floating-point</i>,
+                             memory_order = memory_order::seq_cst) volatile noexcept;
+    <i>floating-point</i> exchange(<i>floating-point</i>,
+                             memory_order = memory_order::seq_cst) noexcept;
+    bool compare_exchange_weak(<i>floating-point</i>&amp;, <i>floating-point</i>,
+                               memory_order, memory_order) volatile noexcept;
+    bool compare_exchange_weak(<i>floating-point</i>&amp;, <i>floating-point</i>,
+                               memory_order, memory_order) noexcept;
+    bool compare_exchange_strong(<i>floating-point</i>&amp;, <i>floating-point</i>,
+                                 memory_order, memory_order) volatile noexcept;
+    bool compare_exchange_strong(<i>floating-point</i>&amp;, <i>floating-point</i>,
+                                 memory_order, memory_order) noexcept;
+    bool compare_exchange_weak(<i>floating-point</i>&amp;, <i>floating-point</i>,
+                               memory_order = memory_order::seq_cst) volatile noexcept;
+    bool compare_exchange_weak(<i>floating-point</i>&amp;, <i>floating-point</i>,
+                               memory_order = memory_order::seq_cst) noexcept;
+    bool compare_exchange_strong(<i>floating-point</i>&amp;, <i>floating-point</i>,
+                                 memory_order = memory_order::seq_cst) volatile noexcept;
+    bool compare_exchange_strong(<i>floating-point</i>&amp;, <i>floating-point</i>,
+                                 memory_order = memory_order::seq_cst) noexcept;
+</code></pre>
+<pre class="ins"><code>    void wait(<i>floating-point</i> old, memory_order = memory_order::seq_cst) const volatile noexcept;</code></pre>
+<pre class="ins"><code>    void wait(<i>floating-point</i> old, memory_order = memory_order::seq_cst) const noexcept;</code></pre>
+<pre class="ins"><code>    void notify_one() volatile noexcept;</code></pre>
+<pre class="ins"><code>    void notify_one() noexcept;</code></pre>
+<pre class="ins"><code>    void notify_all() volatile noexcept;</code></pre>
+<pre class="ins"><code>    void notify_all() noexcept;</code></pre>
+<pre><code>
+&nbsp;
+    <i>floating-point</i> fetch_add(<i>floating-point</i>,
+                                    memory_order = memory_order::seq_cst) volatile noexcept;
+    <i>floating-point</i> fetch_add(<i>floating-point</i>,
+                                    memory_order = memory_order::seq_cst) noexcept;
+    <i>floating-point</i> fetch_sub(<i>floating-point</i>,
+                                    memory_order = memory_order::seq_cst) volatile noexcept;
+    <i>floating-point</i> fetch_sub(<i>floating-point</i>,
+                                    memory_order = memory_order::seq_cst) noexcept;
+
+    atomic() noexcept = default;
+    constexpr atomic(<i>floating-point</i>) noexcept;
+    atomic(const atomic&amp;) = delete;
+    atomic&amp; operator=(const atomic&amp;) = delete;
+    atomic&amp; operator=(const atomic&amp;) volatile = delete;
+    <i>floating-point</i> operator=(<i>floating-point</i>) volatile noexcept;
+    <i>floating-point</i> operator=(<i>floating-point</i>) noexcept;
+
+    <i>floating-point</i> operator+=(<i>floating-point</i>) volatile noexcept;
+    <i>floating-point</i> operator+=(<i>floating-point</i>) noexcept;
+    <i>floating-point</i> operator-=(<i>floating-point</i>) volatile noexcept;
+    <i>floating-point</i> operator-=(<i>floating-point</i>) noexcept;
+  };
+}
+</code></pre>
+</blockquote>
+
+Modify <a href="http://eel.is/c++draft/atomics.types.pointer#1">[**atomics.types.pointer**] paragraph 1</a> as follows:
+
+<blockquote>
+<b>30.7.4 Partial specialization for pointers <span style="float: right;">[atomics.types.pointer]</span></b>
+
+<pre><code>
+namespace std {
+  template&lt;class T&gt; struct atomic&lt;T*&gt; {
+    using value_type = T*;
+    using difference_type = ptrdiff_t;
+    static constexpr bool is_always_lock_free = <i>implementation-defined</i>;
+    bool is_lock_free() const volatile noexcept;
+    bool is_lock_free() const noexcept;
+    void store(T*, memory_order = memory_order::seq_cst) volatile noexcept;
+    void store(T*, memory_order = memory_order::seq_cst) noexcept;
+    T* load(memory_order = memory_order::seq_cst) const volatile noexcept;
+    T* load(memory_order = memory_order::seq_cst) const noexcept;
+    operator T*() const volatile noexcept;
+    operator T*() const noexcept;
+    T* exchange(T*, memory_order = memory_order::seq_cst) volatile noexcept;
+    T* exchange(T*, memory_order = memory_order::seq_cst) noexcept;
+    bool compare_exchange_weak(T*&amp;, T*, memory_order, memory_order) volatile noexcept;
+    bool compare_exchange_weak(T*&amp;, T*, memory_order, memory_order) noexcept;
+    bool compare_exchange_strong(T*&amp;, T*, memory_order, memory_order) noexcept;
+    bool compare_exchange_weak(T*&amp;, T*,
+                               memory_order = memory_order::seq_cst) volatile noexcept;
+    bool compare_exchange_weak(T*&amp;, T*,
+                               memory_order = memory_order::seq_cst) noexcept;
+    bool compare_exchange_strong(T*&amp;, T*,
+                                 memory_order = memory_order::seq_cst) volatile noexcept;
+    bool compare_exchange_strong(T*&amp;, T*,
+                                 memory_order = memory_order::seq_cst) noexcept;
+</code></pre>
+<pre class="ins"><code>    void wait(T* old, memory_order = memory_order::seq_cst) const volatile noexcept;</code></pre>
+<pre class="ins"><code>    void wait(T* old, memory_order = memory_order::seq_cst) const noexcept;</code></pre>
+<pre class="ins"><code>    void notify_one() volatile noexcept;</code></pre>
+<pre class="ins"><code>    void notify_one() noexcept;</code></pre>
+<pre class="ins"><code>    void notify_all() volatile noexcept;</code></pre>
+<pre class="ins"><code>    void notify_all() noexcept;</code></pre>
+<pre><code>
+&nbsp;   T* fetch_add(ptrdiff_t, memory_order = memory_order::seq_cst) volatile noexcept;
+    T* fetch_add(ptrdiff_t, memory_order = memory_order::seq_cst) noexcept;
+    T* fetch_sub(ptrdiff_t, memory_order = memory_order::seq_cst) volatile noexcept;
+    T* fetch_sub(ptrdiff_t, memory_order = memory_order::seq_cst) noexcept;
+
+    atomic() noexcept = default;
+    constexpr atomic(T*) noexcept;
+    atomic(const atomic&amp;) = delete;
+    atomic&amp; operator=(const atomic&amp;) = delete;
+    atomic&amp; operator=(const atomic&amp;) volatile = delete;
+    T* operator=(T*) volatile noexcept;
+    T* operator=(T*) noexcept;
+
+    T* operator++(int) volatile noexcept;
+    T* operator++(int) noexcept;
+    T* operator--(int) volatile noexcept;
+    T* operator--(int) noexcept;
+    T* operator++() volatile noexcept;
+    T* operator++() noexcept;
+    T* operator--() volatile noexcept;
+    T* operator--() noexcept;
+    T* operator+=(ptrdiff_t) volatile noexcept;
+    T* operator+=(ptrdiff_t) noexcept;
+    T* operator-=(ptrdiff_t) volatile noexcept;
+    T* operator-=(ptrdiff_t) noexcept;
+  };
+}
+</code></pre>
+
+<div class="numbered">
+There is a partial specialization of the `atomic` class template for pointers.
+Specializations of this partial specialization are standard-layout structs.
+They each have a trivial default constructor and a trivial destructor.
+</div>
 </blockquote>
 
 Modify <a href="http://eel.is/c++draft/atomics.flag">[**atomics.flag**]</a> as follows:
 
 <blockquote>
-<b>29.8 Flag type and operations <span style="float: right;">[atomics.flag]</span></b>
+<b>30.9 Flag type and operations <span style="float: right;">[atomics.flag]</span></b>
 
 <xmp>
 namespace std {
@@ -416,10 +664,10 @@ namespace std {
 </code></pre>
 <pre class="ins"><code>    void wait(bool, memory_order = memory_order::seq_cst) const volatile noexcept;</code></pre>
 <pre class="ins"><code>    void wait(bool, memory_order = memory_order::seq_cst) const noexcept;</code></pre>
-<pre class="ins"><code>    void notify_one() const volatile noexcept;</code></pre>
-<pre class="ins"><code>    void notify_one() const noexcept;</code></pre>
-<pre class="ins"><code>    void notify_all() const volatile noexcept;</code></pre>
-<pre class="ins"><code>    void notify_all() const noexcept;</code></pre>
+<pre class="ins"><code>    void notify_one() volatile noexcept;</code></pre>
+<pre class="ins"><code>    void notify_one() noexcept;</code></pre>
+<pre class="ins"><code>    void notify_all() volatile noexcept;</code></pre>
+<pre class="ins"><code>    void notify_all() noexcept;</code></pre>
 <pre><code>
 &nbsp;
 &nbsp;   atomic_flag() noexcept = default;
@@ -581,8 +829,8 @@ void atomic_flag::wait(bool old,
 <xmp>
 void atomic_flag_notify_one(volatile atomic_flag* object) noexcept;
 void atomic_flag_notify_one(atomic_flag* object) noexcept;
-void atomic_flag::notify_one() const volatile noexcept;
-void atomic_flag::notify_one() const noexcept;
+void atomic_flag::notify_one() volatile noexcept;
+void atomic_flag::notify_one() noexcept;
 </xmp>
 
 <div class="numbered">
@@ -596,8 +844,8 @@ void atomic_flag::notify_one() const noexcept;
 <xmp>
 void atomic_flag_notify_all(volatile atomic_flag* object) const noexcept;
 void atomic_flag_notify_all(atomic_flag* object) const noexcept;
-void atomic_flag::notify_all() const volatile noexcept;
-void atomic_flag::notify_all() const noexcept;
+void atomic_flag::notify_all() volatile noexcept;
+void atomic_flag::notify_all() noexcept;
 </xmp>
 
 <div class="numbered">
@@ -611,28 +859,28 @@ void atomic_flag::notify_all() const noexcept;
 </div>
 </blockquote>
 
-Modify Table 135 "Thread support library summary" in <a href="http://eel.is/c++draft/thread.general">[**thread.general**]</a> as follows:
+Modify Table 134 "Thread support library summary" in <a href="http://eel.is/c++draft/thread.general">[**thread.general**]</a> as follows:
 
 <blockquote>
 <div style="text-align: center;">
-Table 135 — Thread support library summary
+Table 134 — Thread support library summary
 </div>
 <table border=1 style="margin: auto;">
 <tr>             <th></th>     <th>Subclause</th>            <th>Header(s)</th> </tr>
-<tr>             <td>30.2</td> <td>Requirements</td>         <td></td> </tr>
-<tr>             <td>30.3</td> <td>Threads</td>              <td>`<thread>`</td> </tr>
-<tr>             <td>30.4</td> <td>Mutual exclusion</td>     <td>`<mutex>` `<shared_mutex>`</td> </tr>
-<tr>             <td>30.5</td> <td>Condition variables</td>  <td>`<condition_variable>`</td> </tr>
-<tr class="ins"> <td>30.�</td> <td>Semaphores</td>           <td>`<semaphore>`</td> </tr>
-<tr class="ins"> <td>30.�</td> <td>Latches and barriers</td> <td>`<latch>` `<barrier>`</td> </tr>
-<tr>             <td>30.6</td> <td>Futures</td>              <td>`<future>`</td> </tr>
+<tr>             <td>31.2</td> <td>Requirements</td>         <td></td> </tr>
+<tr>             <td>31.3</td> <td>Threads</td>              <td>`<thread>`</td> </tr>
+<tr>             <td>31.4</td> <td>Mutual exclusion</td>     <td>`<mutex>` `<shared_mutex>`</td> </tr>
+<tr>             <td>31.5</td> <td>Condition variables</td>  <td>`<condition_variable>`</td> </tr>
+<tr class="ins"> <td>31.�</td> <td>Semaphores</td>           <td>`<semaphore>`</td> </tr>
+<tr class="ins"> <td>31.�</td> <td>Latches and barriers</td> <td>`<latch>` `<barrier>`</td> </tr>
+<tr>             <td>31.6</td> <td>Futures</td>              <td>`<future>`</td> </tr>
 </table>
 </blockquote>
 
 Add two new subclauses after <a href="http://eel.is/c++draft/thread.condition">[**thread.condition**]</a>:
 
 <blockquote class="ins">
-<b>30.� Semaphores <span style="float: right;">[thread.semaphore]</span></b>
+<b>31.� Semaphores <span style="float: right;">[thread.semaphore]</span></b>
 
 <div class="numbered">
 Semaphores are lightweight synchronization primitives used to constrain concurrent access to a shared resource. They are widely used to implement other synchronization primitives and, whenever both are applicable, can be more efficient than condition variables.
@@ -645,7 +893,7 @@ A counting semaphore is a semaphore object that models a non-negative resource c
 </blockquote>
 
 <blockquote class="ins">
-<b>30.�.1 Header `<semaphore>` synopsis <span style="float: right;">[thread.semaphore.syn]</span></b>
+<b>31.�.1 Header `<semaphore>` synopsis <span style="float: right;">[thread.semaphore.syn]</span></b>
 
 <pre><code>
 namespace std {  
@@ -658,7 +906,7 @@ namespace std {
 </blockquote>
 
 <blockquote class="ins">
-<b>30.�.2 Class template `counting_semaphore` <span style="float: right;">[thread.semaphore.counting.class]</span></b>
+<b>31.�.2 Class template `counting_semaphore` <span style="float: right;">[thread.semaphore.counting.class]</span></b>
 
 <pre><code>
 namespace std {
@@ -667,7 +915,7 @@ namespace std {
   public:
     static constexpr ptrdiff_t max() noexcept;
 
-    explicit counting_semaphore(ptrdiff_t);
+    constexpr explicit counting_semaphore(ptrdiff_t desired);
     ~counting_semaphore();
 
     counting_semaphore(const basic_semaphore&amp;) = delete;
@@ -676,12 +924,12 @@ namespace std {
     counting_semaphore&amp; operator=(basic_semaphore&amp;&amp;) = delete;
 
     void release(ptrdiff_t update = 1);
-    void acquire() noexcept;
+    void acquire();
     bool try_acquire() noexcept;
-    template&lt;class Clock, class Duration&gt;
-      bool try_acquire_until(const chrono::time_point&lt;Clock, Duration&gt;&amp;);
     template&lt;class Rep, class Period&gt;
-      bool try_acquire_for(const chrono::duration&lt;Rep, Period&gt;&amp;);
+      bool try_acquire_for(const chrono::duration&lt;Rep, Period&gt;&amp; rel_time);
+    template&lt;class Clock, class Duration&gt;
+      bool try_acquire_until(const chrono::time_point&lt;Clock, Duration&gt;&amp; abs_time);
 
   private:
     ptrdiff_t counter; <i>// exposition only</i>
@@ -707,7 +955,7 @@ static constexpr ptrdiff_t max() noexcept;
 </div>
 
 ```
-explicit counting_semaphore(ptrdiff_t desired);
+constexpr explicit counting_semaphore(ptrdiff_t desired);
 ```
 
 <div class="numbered">
@@ -718,9 +966,8 @@ explicit counting_semaphore(ptrdiff_t desired);
 *Effects:* `counter = desired`.
 </div>
 
-<!-- Based on std::thread::thread wording -->
 <div class="numbered">
-*Throws:* `system_error` if unable to create the semaphore.
+*Throws:* Nothing.
 </div>
 
 ```
@@ -753,11 +1000,12 @@ void release(ptrdiff_t update = 1);
 </div>
 
 <div class="numbered">
-*Throws:* Nothing.
+*Synchronization:* Strongly happens before invocations of `try_acquire` that observe the result of the effects.
 </div>
 
+<!-- Based on std::mutex::lock wording -->
 <div class="numbered">
-*Synchronization:* Strongly happens before invocations of `try_acquire` that observe the result of the effects.
+*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">31.2.2</a>).
 </div>
 
 ```
@@ -777,7 +1025,7 @@ bool try_acquire() noexcept;
 </div>
 
 ```
-void acquire() noexcept;
+void acquire();
 ```
 
 <div class="numbered">
@@ -788,11 +1036,16 @@ void acquire() noexcept;
 
 </div>
 
+<!-- Based on std::mutex::lock wording -->
+<div class="numbered">
+*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">31.2.2</a>).
+</div>
+
 ```
-template<class Clock, class Duration>
-  bool try_acquire_until(const chrono::time_point<Clock, Duration>& abs_time);
 template<class Rep, class Period>
   bool try_acquire_for(const chrono::duration<Rep, Period>& rel_time);
+template<class Clock, class Duration>
+  bool try_acquire_until(const chrono::time_point<Clock, Duration>& abs_time);
 ```
 
 <div class="numbered">
@@ -803,14 +1056,14 @@ template<class Rep, class Period>
 
 </div>
 
+<!-- Based on std::timed_mutex::try_lock_for wording -->
 <div class="numbered">
-*Throws:* Timeout-related exceptions (30.2.4).
+*Throws:* Timeout-related exceptions (<a href="http://eel.is/c++draft/thread.req.timing">31.2.4</a>).
 </div>
 </blockquote>
 
-
 <blockquote class="ins">
-<b>30.� Coordination Types <span style="float: right;">[thread.coord]</span></b>
+<b>31.� Coordination Types <span style="float: right;">[thread.coord]</span></b>
 
 <div class="numbered">
 This section describes various concepts related to thread coordination, and defines the <dfn>coordination types</dfn> `latch` and `barrier`. These types facilitate concurrent computation performed by a number of threads, in one or more <dfn>phases</dfn>.
@@ -826,7 +1079,7 @@ Concurrent invocations of the member functions of [=coordination types=], other 
 </blockquote>
 
 <blockquote class="ins">
-<b>30.�.1 Latches <span style="float: right;">[thread.coord.latch]</span></b>
+<b>31.�.1 Latches <span style="float: right;">[thread.coord.latch]</span></b>
 
 <div class="numbered">
 A latch is a thread coordination mechanism that allows any number of threads to block until an expected count is summed (exactly) by threads that arrived at the latch. The expected count is set when the latch is constructed. An individual latch is a single-use object; once the count has been reached, the latch cannot be reused. 
@@ -834,7 +1087,7 @@ A latch is a thread coordination mechanism that allows any number of threads to 
 </blockquote>
 
 <blockquote class="ins">
-<b>30.�.1.1 Header `<latch>` synopsis <span style="float: right;">[thread.coord.latch.syn]</span></b>
+<b>31.�.1.1 Header `<latch>` synopsis <span style="float: right;">[thread.coord.latch.syn]</span></b>
 
 <xmp>
 namespace std {
@@ -844,13 +1097,13 @@ namespace std {
 </blockquote>
 
 <blockquote class="ins">
-<b>30.�.1.2 Class `latch` <span style="float: right;">[thread.coord.latch.class]</span></b>
+<b>31.�.1.2 Class `latch` <span style="float: right;">[thread.coord.latch.class]</span></b>
 
 <pre><code>
 namespace std {
   class latch {
   public:
-    explicit latch(ptrdiff_t expected);
+    constexpr explicit latch(ptrdiff_t expected);
     ~latch();
 
     latch(const latch&amp;) = delete;
@@ -860,8 +1113,8 @@ namespace std {
     
     void count_down(ptrdiff_t update = 1);
     bool try_wait() const noexcept;
-    void wait() const noexcept;
-    void sync(ptrdiff_t update = 1);
+    void wait() const;
+    void arrive_and_wait(ptrdiff_t update = 1);
 
   private:
     ptrdiff_t counter; <i>// exposition only</i>
@@ -874,7 +1127,7 @@ A `latch` maintains an internal counter that is initialized when the `latch` is 
 </div>
 
 ```
-explicit latch(ptrdiff_t expected);
+constexpr explicit latch(ptrdiff_t expected);
 ```
 
 <div class="numbered">
@@ -885,9 +1138,8 @@ explicit latch(ptrdiff_t expected);
 *Effects:* `counter = expected`.
 </div>
 
-<!-- Based on std::thread::thread wording -->
 <div class="numbered">
-*Throws:* `system_error` if unable to create the latch.
+*Throws:* Nothing.
 </div>
 
 ```
@@ -910,7 +1162,6 @@ explicit latch(ptrdiff_t expected);
 *Remarks:* May be called even if some threads have not yet returned from functions that block at the synchronization point, provided that they are unblocked. [ *Note:* The destructor may block until all threads have exited invocations of `wait` on this object. — *end note* ]
 </div>
 
-
 ```
 void count_down(ptrdiff_t update = 1);
 ```
@@ -924,11 +1175,12 @@ void count_down(ptrdiff_t update = 1);
 </div>
 
 <div class="numbered">
-*Throws:* Nothing.
+*Synchronization:* Synchronizes with the returns from all calls unblocked by the effects.
 </div>
 
+<!-- Based on std::mutex::lock wording -->
 <div class="numbered">
-*Synchronization:* Synchronizes with the returns from all calls unblocked by the effects.
+*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">31.2.2</a>).
 </div>
 
 <div class="numbered">
@@ -943,7 +1195,6 @@ bool try_wait() const noexcept;
 *Returns:* `counter == 0`. 
 </div>
 
-
 ```
 void wait() const noexcept;
 ```
@@ -952,21 +1203,27 @@ void wait() const noexcept;
 *Effects:* If `counter == 0`, returns immediately. Otherwise, blocks the calling thread at the synchronization point until `counter == 0`. 
 </div>
 
+<!-- Based on std::mutex::lock wording -->
+<div class="numbered">
+*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">31.2.2</a>).
+</div>
+
 ```
-void sync(ptrdiff_t update = 1);
+void arrive_and_wait(ptrdiff_t update = 1);
 ```
 
 <div class="numbered">
 *Effects:* Equivalent to `count_down(update); wait();`.
 </div>
 
+<!-- Based on std::mutex::lock wording -->
 <div class="numbered">
-*Throws:* Nothing.
+*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">31.2.2</a>).
 </div>
 </blockquote>
 
 <blockquote class="ins">
-<b>30.�.2 Barriers <span style="float: right;">[thread.coord.barrier]</span></b>
+<b>31.�.2 Barriers <span style="float: right;">[thread.coord.barrier]</span></b>
 
 <div class="numbered">
 A barrier is a thread coordination mechanism that allows at most an expected count of threads to block until that count is summed (exactly) by threads that arrived at the barrier in each of its successive [=phases=]. Once threads are released from blocking at the synchronization point for a [=phase=], they can reuse the same barrier immediately in its next [=phase=]. [ *Note:* It is thus useful for managing repeated tasks, or [=phases=] of a larger task, that are handled by multiple threads. — *end note* ]
@@ -982,7 +1239,7 @@ A barrier has a <dfn>completion step</dfn> that is a (possibly empty) set of eff
 </blockquote>
 
 <blockquote class="ins">
-<b>30.�.2.1 Header `<barrier>` synopsis <span style="float: right;">[thread.coord.barrier.syn]</span></b>
+<b>31.�.2.1 Header `<barrier>` synopsis <span style="float: right;">[thread.coord.barrier.syn]</span></b>
 
 <pre><code>
 namespace std {
@@ -993,7 +1250,7 @@ namespace std {
 </blockquote>
 
 <blockquote class="ins">
-<b>30.�.2.2 Class template `barrier` <span style="float: right;">[thread.coord.barrier.class]</span></b>
+<b>31.�.2.2 Class template `barrier` <span style="float: right;">[thread.coord.barrier.class]</span></b>
 
 <pre><code>
 namespace std {
@@ -1002,8 +1259,9 @@ namespace std {
   public:
     using arrival_token = implementation-defined;
 
-    explicit barrier(ptrdiff_t expected,
-                     CompletionFunction f = CompletionFunction());
+    constexpr explicit barrier(ptrdiff_t expected,
+                               CompletionFunction f = CompletionFunction());
+
     ~barrier();
 
     barrier(const barrier&amp;) = delete;
@@ -1014,7 +1272,7 @@ namespace std {
     [[nodiscard]] arrival_token arrive(ptrdiff_t update = 1);
     void wait(arrival_token&& arrival) const;
 
-    void sync();
+    void arrive_and_wait();
     void arrive_and_drop();
 
   private:
@@ -1028,29 +1286,29 @@ A `barrier` is a barrier type with a [=completion step=] controlled by a functio
 </div>
 
 <div class="numbered">
-`CompletionFunction` shall be `CopyConstructible`, `is_invocable_r_v<void, CompletionFunction>` shall be `true`, and `noexcept(declval<CompletionFunction>()())` shall be `true`.
+`CompletionFunction` shall be `Cpp17MoveConstructible` (Table <a href="http://eel.is/c++draft/utility.arg.requirements#tab:moveconstructible">26</a>), `is_invocable_r_v<void, CompletionFunction>` shall be `true`, and `noexcept(declval<CompletionFunction>()())` shall be `true`.
 </div>
 
 <div class="numbered">
-`barrier::arrival_token` is an implementation-defined type. `is_nothrow_move_constructible_v<barrier::arrival_token>` shall be `true` and  `is_nothrow_move_assignable_v<barrier::arrival_token>` shall be `true`.
+`barrier::arrival_token` is an implementation-defined type. `is_nothrow_move_constructible_v<barrier::arrival_token>` shall be `true` and `is_nothrow_move_assignable_v<barrier::arrival_token>` shall be `true`.
 </div>
 
 ```
-explicit barrier(ptrdiff_t expected, CompletionFunction f);
+constexpr explicit barrier(ptrdiff_t expected,
+                           CompletionFunction f = CompletionFunction());
 ```
 
 <div class="numbered">
 *Requires:* `expected >= 0`, and `noexcept(f())` shall be `true`.
 </div>
 
-
 <div class="numbered">
 *Effects:* Initializes the barrier for `expected` number of threads in the first [=phase=], and initializes `completion` with `move(f)`. [ *Note:* If `expected` is `0` this object may only be destroyed. — *end note* ]
 </div>
 
-<!-- Based on std::thread::thread wording -->
+<!-- Based on std::function::function wording -->
 <div class="numbered">
-*Throws:* `system_error` if unable to create the barrier.
+*Throws:* Any exception thrown by `CompletionFunction`'s move constructor.
 </div>
 
 ```
@@ -1063,10 +1321,6 @@ explicit barrier(ptrdiff_t expected, CompletionFunction f);
 
 <div class="numbered">
 *Effects:* Destroys the barrier.
-</div>
-
-<div class="numbered">
-*Throws:* Nothing.
 </div>
 
 <div class="numbered">
@@ -1093,6 +1347,11 @@ explicit barrier(ptrdiff_t expected, CompletionFunction f);
 *Returns:* The constructed object.
 </div>
 
+<!-- Based on std::mutex::lock wording -->
+<div class="numbered">
+*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">31.2.2</a>).
+</div>
+
 <div class="numbered">
 *Remarks:* This may cause the [=completion step=] to start.
 </div>
@@ -1110,20 +1369,22 @@ void wait(arrival_token&& arrival) const;
 *Effects:* Blocks at the synchronization point associated with `std::move(arrival)` until the condition is satisfied.
 </div>
 
+<!-- Based on std::mutex::lock wording -->
 <div class="numbered">
-*Throws:* Nothing.
+*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">31.2.2</a>).
 </div>
 
 ```
-void sync();
+void arrive_and_wait();
 ```
 
 <div class="numbered">
 *Effects:* Equivalent to `wait(arrive())`.
 </div>
 
+<!-- Based on std::mutex::lock wording -->
 <div class="numbered">
-*Throws:* Nothing.
+*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">31.2.2</a>).
 </div>
 
 ``` 
@@ -1139,11 +1400,12 @@ void arrive_and_drop();
 </div>
 
 <div class="numbered">
-*Throws:* Nothing.
+*Synchronization:* The call to `arrive_and_drop` strongly happens before the start of the [=completion step=] for the current [=phase=].
 </div>
 
+<!-- Based on std::mutex::lock wording -->
 <div class="numbered">
-*Synchronization:* The call to `arrive_and_drop` strongly happens before the start of the [=completion step=] for the current [=phase=].
+*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">31.2.2</a>).
 </div>
 
 <div class="numbered">
@@ -1155,7 +1417,7 @@ Create the following feature test macros:
 
   - `__cpp_lib_atomic_lock_free_type_aliases`, which implies that `atomic_signed_lock_free` and `atomic_unsigned_lock_free` types are available.
   - `__cpp_lib_atomic_flag_test`, which implies the `test` methods and free functions for `atomic_flag` are available.
-  - `__cpp_lib_atomic_wait`, which implies the `notify_*` and `wait` methods and free functions for `atomic` and `atomic_flag` and the `atomic_int_fast_wait_t` and `atomic_uint_fast_wait_t` types are available.
+  - `__cpp_lib_atomic_wait`, which implies the `notify_*` and `wait` methods and free functions for `atomic` and `atomic_flag` are available.
   - `__cpp_lib_semaphore`, which implies that `counting_semaphore` and `binary_semaphore` are available.
   - `__cpp_lib_latch`, which implies that `latch` is available.
   - `__cpp_lib_barrier`, which implies that `barrier` is available.
