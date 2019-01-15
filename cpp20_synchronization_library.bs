@@ -6,16 +6,16 @@ Distributed under the Boost Software License v1.0 (boost.org/LICENSE_1_0.txt)
 -->
 <pre class='metadata'>
 Title: The C++20 Synchronization Library
-Shortname: D1135
+Shortname: P1135
 Revision: 2
-Status: D
+Status: P
 Group: WG21
 Audience: LWG, LEWG, SG1
 Editor: Bryce Adelstein Lelbach, NVIDIA, brycelelbach@gmail.com
 Editor: Olivier Giroux, NVIDIA, ogiroux@nvidia.com
 Editor: JF Bastien, Apple, jfbastien@apple.com
 Editor: Detlef Vollmann, dv@vollmann.ch
-URL: https://wg21.link/P1135R1
+URL: https://wg21.link/P1135R2
 !Source: <a href="https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/blob/master/cpp20_synchronization_library.bs">GitHub</a>
 Issue Tracking: GitHub https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/issues
 Metadata Order: Author, This Version, Source, Issue Tracking, Project, Audience
