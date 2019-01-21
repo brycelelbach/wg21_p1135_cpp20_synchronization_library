@@ -6,9 +6,9 @@ Distributed under the Boost Software License v1.0 (boost.org/LICENSE_1_0.txt)
 -->
 <pre class='metadata'>
 Title: The C++20 Synchronization Library
-Shortname: D1135
+Shortname: P1135
 Revision: 3
-Status: D
+Status: P
 Group: WG21
 Audience: LWG
 Editor: Bryce Adelstein Lelbach, NVIDIA, brycelelbach@gmail.com
@@ -91,18 +91,18 @@ div.newnumbered li:before {
 
 # Introduction # {#intro}
 
-This paper is the unification of the wording for a series of related C++20
-proposals for introducing new synchronization and thread coordination
-facilities and enhancing existing ones:
+This paper is the unification of a series of related C++20 proposals for
+introducing new synchronization and thread coordination facilities and
+enhancing existing ones:
 
-  - [[P0514r4]]: Efficient `atomic` waiting and semaphores.
-  - [[P0666r2]]: Latches and barriers.
-  - [[P0995r1]]: `atomic_flag::test` and lockfree integral types.
-  - [[P1258r0]]: Don't make C++ unimplementable for small CPUs.
+  - [[P0514R4]]: Efficient `atomic` waiting and semaphores.
+  - [[P0666R2]]: Latches and barriers.
+  - [[P0995R1]]: `atomic_flag::test` and lockfree integral types.
+  - [[P1258R0]]: Don't make C++ unimplementable for small CPUs.
 
-## Changelog ## {#changelog}
+# Changelog # {#changelog}
 
-**Revision 0:** Post Rapperswil 2018 changes from [[P0514r4]], [[P0666r2]], and [[P0995r1]] based on <a href="http://wiki.edg.com/bin/view/Wg21rapperswil2018/P0666">Rapperswil 2018 LEWG feedback</a>.
+**Revision 0:** Post Rapperswil 2018 changes from [[P0514R4]], [[P0666R2]], and [[P0995R1]] based on <a href="http://wiki.edg.com/bin/view/Wg21rapperswil2018/P0666">Rapperswil 2018 LEWG feedback</a>.
 
   - Refactored `basic_barrier` and `barrier` into one class with a default template parameter as suggested by LEWG at Rapperswil 2018.
   - Refactored `basic_semaphore` and `counting_semaphore` into one class with a default template parameter as suggested by LEWG at Rapperswil 2018.
@@ -120,10 +120,10 @@ facilities and enhancing existing ones:
   - Made `counting_semaphore`, `latch`, and `barrier`'s constructors non `constexpr` and allowed them to throw `system_error` if the object cannot be created, because participants in the mailing list discussion preferred that synchronization operations not throw and that any resource acquisition failures be reported by throwing during construction of synchronization objects.
   - Clarified that `counting_semaphore::release`, `latch::count_down`, `latch::sync`, `barrier::wait`, `barrier::sync`, and `barrier::arrive_and_drop` throw nothing (but cannot be `noexcept`, because they have preconditions) to resolve discussions in LEWG at Rapperswil 2018 and on the mailing list.  
 
-**Revision 2:** San Diego 2018 changes to incorporate [[P1258r0]] and pre-meeting feedback.
+**Revision 2:** San Diego 2018 changes to incorporate [[P1258R0]] and pre-meeting feedback.
 
   - Made `barrier::wait` take its `arrival_token` parameter by rvalue reference.
-  - Made the `atomic_signed_lock_free` and `atomic_unsigned_lock_free` types optional for freestanding implementations, as per [[P1258r0]].
+  - Made the `atomic_signed_lock_free` and `atomic_unsigned_lock_free` types optional for freestanding implementations, as per [[P1258R0]].
 
 **Revision 3:** Pre Kona 2019 changes based on <a href="http://wiki.edg.com/bin/view/Wg21sandiego2018/P1135">San Diego 2018 LEWG feedback</a>.
 
@@ -141,7 +141,7 @@ Note: The following changes are relative to the post San Diego 2018 working draf
 
 Note: The � character is used to denote a placeholder number which shall be selected by the editor.
 
-Add `<semaphore>`, `<latch>`, and `<barrier>` to Table 18 "C++ library headers" in <a href="http://eel.is/c++draft/headers">[**headers**]</a>.
+Add `<semaphore>`, `<latch>`, and `<barrier>` to Table 19 "C++ library headers" in <a href="http://eel.is/c++draft/headers">[**headers**]</a>.
 
 Modify the header synopsis for `<atomic>` in <a href="http://eel.is/c++draft/atomics.syn">[**atomics.syn**]</a> as follows:
 
