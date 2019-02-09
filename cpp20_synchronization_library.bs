@@ -7,7 +7,7 @@ Distributed under the Boost Software License v1.0 (boost.org/LICENSE_1_0.txt)
 <pre class='metadata'>
 Title: The C++20 Synchronization Library
 Shortname: P1135
-Revision: 3
+Revision: 4
 Status: P
 Group: WG21
 Audience: LWG
@@ -135,6 +135,8 @@ enhancing existing ones:
   - Added missing `atomic<T>::wait` and `atomic<T>::notify_*` member functions to the class synopses for the `atomic<T>` integral, floating-point, and pointer specializations.
   - Fixed `atomic<T>::notify_*` member functions to be non `const`.
 
+**Revision 4:** Fix typos and minor bugs in between the pre-Kona mailing and the Kona 2019 meeting.
+
 # Wording # {#wording}
 
 Note: The following changes are relative to the post San Diego 2018 working draft of ISO/IEC 14882, ([[N4791]]).
@@ -174,15 +176,11 @@ namespace std {
 <pre class="ins"><code>    void atomic_notify_one(volatile atomic&lt;T&gt;*);</code></pre>
 <pre class="ins"><code>  template&lt;class T&gt; </code></pre>
 <pre class="ins"><code>    void atomic_notify_one(atomic&lt;T&gt;*);</code></pre>
-<pre class="ins"><code>  void atomic_notify_one(volatile atomic_flag*);</code></pre>
-<pre class="ins"><code>  void atomic_notify_one(atomic_flag*);</code></pre>
 <pre class="ins"><code>  template&lt;class T&gt; </code></pre>
 <pre class="ins"><code>    void atomic_notify_all(volatile atomic&lt;T&gt;*);</code></pre>
 <pre class="ins"><code>  template&lt;class T&gt; </code></pre>
 <pre class="ins"><code>    void atomic_notify_all(atomic&lt;T&gt;*);</code></pre>
-<pre class="ins"><code>  void atomic_notify_all(volatile atomic_flag*);</code></pre>
-<pre class="ins"><code>  void atomic_notify_all(atomic_flag*);</code></pre>
-<pre></code>
+<pre><code>
 &nbsp;
 &nbsp; <i>// 30.3, type aliases</i>
   <i>// ...</i>
@@ -274,6 +272,7 @@ The following functions are <dfn>atomic waiting operations</dfn>:
   - `atomic<T>::wait`.
   - `atomic_flag::wait`.
   - `atomic_wait` and `atomic_wait_explicit`.
+  - `atomic_flag_wait` and `atomic_flag_wait_explicit`.
 
 </div>
 
@@ -282,10 +281,8 @@ The following functions are <dfn>atomic notifying operations</dfn>:
 
   - `atomic<T>::notify_one` and `atomic<T>::notify_all`.
   - `atomic_flag::notify_one` and `atomic_flag::notify_all`.
-  - `atomic_notify_one` and `atomic_notify_one_explicit`.
-  - `atomic_flag_notify_one` and `atomic_flag_notify_one_explicit`.
-  - `atomic_notify_all` and `atomic_notify_all_explicit`.
-  - `atomic_flag_notify_all` and `atomic_flag_notify_all_explicit`.
+  - `atomic_notify_one` and `atomic_notify_all`.
+  - `atomic_flag_notify_one` and `atomic_flag_notify_all`.
 
 </div>
 
@@ -358,7 +355,7 @@ void wait(T old, memory_order order = memory_order::seq_cst) const noexcept;
 <div class="numbered">
 *Effects:* Repeatedly performs the following steps, in order: 
 
-  - Evaluates `object->load(order) != old` then, if the result is `true`, returns.
+  - Evaluates `this->load(order) != old` then, if the result is `true`, returns.
   - Blocks until an implementation-defined condition has been met.
     [ *Note:* Consequently, it may unblock for reasons other than an [=atomic notifying operation=]. — *end note* ]
 
@@ -374,7 +371,7 @@ void notify_one() noexcept;
 ```
 
 <div class="numbered">
-*Effects:* Unblocks up to execution of an [=atomic waiting operation=] that blocked after observing the result of an atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*this`, and `Y` happens before this call.
+*Effects:* Unblocks up to one execution of an [=atomic waiting operation=] that blocked after observing the result of an atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*this`, and `Y` happens before this call.
 </div>
 
 <div class="numbered">
@@ -816,7 +813,7 @@ void atomic_flag::wait(bool old,
 <div class="numbered">
 *Effects:* Repeatedly performs the following steps, in order: 
 
-  - Evaluates `object->load(order) != old` then, if the result is `true`, returns.
+  - Evaluates `object->load(order) != old` or `this->load(order) != old` then, if the result is `true`, returns.
   - Blocks until an implementation-defined condition has been met.
     [ *Note:* Consequently, it may unblock for reasons other than an [=atomic notifying operation=]. — *end note* ]
 
@@ -834,7 +831,7 @@ void atomic_flag::notify_one() noexcept;
 </xmp>
 
 <div class="numbered">
-*Effects:* Unblocks up to one execution of a [=atomic waiting operation=] that blocked after observing the result of an atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*object` or `*this`, and `Y` happens before this call.
+*Effects:* Unblocks up to one execution of an [=atomic waiting operation=] that blocked after observing the result of an atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*object` or `*this`, and `Y` happens before this call.
 </div>
 
 <div class="numbered">
@@ -849,7 +846,7 @@ void atomic_flag::notify_all() noexcept;
 </xmp>
 
 <div class="numbered">
-*Effects:* Unblocks each execution of a [=atomic waiting operation=] that blocked after observing the result of an atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*object` or `*this`, and `Y` happens before this call.
+*Effects:* Unblocks each execution of an [=atomic waiting operation=] that blocked after observing the result of an atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*object` or `*this`, and `Y` happens before this call.
 </div>
 
 <div class="numbered">
@@ -918,10 +915,10 @@ namespace std {
     constexpr explicit counting_semaphore(ptrdiff_t desired);
     ~counting_semaphore();
 
-    counting_semaphore(const basic_semaphore&amp;) = delete;
-    counting_semaphore(basic_semaphore&amp;&amp;) = delete;
-    counting_semaphore&amp; operator=(const basic_semaphore&amp;) = delete;
-    counting_semaphore&amp; operator=(basic_semaphore&amp;&amp;) = delete;
+    counting_semaphore(const counting_semaphore&amp;) = delete;
+    counting_semaphore(counting_semaphore&amp;&amp;) = delete;
+    counting_semaphore&amp; operator=(const counting_semaphore&amp;) = delete;
+    counting_semaphore&amp; operator=(counting_semaphore&amp;&amp;) = delete;
 
     void release(ptrdiff_t update = 1);
     void acquire();
@@ -1196,7 +1193,7 @@ bool try_wait() const noexcept;
 </div>
 
 ```
-void wait() const noexcept;
+void wait() const;
 ```
 
 <div class="numbered">
@@ -1257,7 +1254,7 @@ namespace std {
   template&ltclass CompletionFunction&gt;
   class barrier {
   public:
-    using arrival_token = implementation-defined;
+    using arrival_token = <i>implementation-defined</i>;
 
     constexpr explicit barrier(ptrdiff_t expected,
                                CompletionFunction f = CompletionFunction());
@@ -1332,7 +1329,7 @@ constexpr explicit barrier(ptrdiff_t expected,
 ```
 
 <div class="numbered">
-*Requires:* The expected count is not less than `update`. 
+*Requires:* `update >= 0` and `update` is not greater than the expected count.
 </div>
 
 <div class="numbered">
