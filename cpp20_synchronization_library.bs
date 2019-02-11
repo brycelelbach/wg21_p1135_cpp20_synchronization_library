@@ -6,15 +6,16 @@ Distributed under the Boost Software License v1.0 (boost.org/LICENSE_1_0.txt)
 -->
 <pre class='metadata'>
 Title: The C++20 Synchronization Library
-Shortname: P1135
+Shortname: D1135
 Revision: 4
-Status: P
+Status: D
 Group: WG21
 Audience: LWG
 Editor: Bryce Adelstein Lelbach, NVIDIA, brycelelbach@gmail.com
 Editor: Olivier Giroux, NVIDIA, ogiroux@nvidia.com
 Editor: JF Bastien, Apple, jfbastien@apple.com
 Editor: Detlef Vollmann, dv@vollmann.ch
+Editor: David Olsen, NVIDIA, dolsen@nvidia.com
 URL: https://wg21.link/P1135R3
 !Source: <a href="https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/blob/master/cpp20_synchronization_library.bs">GitHub</a>
 Issue Tracking: GitHub https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/issues
@@ -355,7 +356,7 @@ void wait(T old, memory_order order = memory_order::seq_cst) const noexcept;
 <div class="numbered">
 *Effects:* Repeatedly performs the following steps, in order: 
 
-  - Evaluates `this->load(order) != old` then, if the result is `true`, returns.
+  - Evaluates `load(order) != old` then, if the result is `true`, returns.
   - Blocks until an implementation-defined condition has been met.
     [ *Note:* Consequently, it may unblock for reasons other than an [=atomic notifying operation=]. — *end note* ]
 
@@ -384,7 +385,7 @@ void notify_all() noexcept;
 ```
 
 <div class="numbered">
-*Effects:* Unblocks each execution of an [=atomic waiting operation=] that blocked after observing the result of an atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*this`, and `Y` happens before this call.
+*Effects:* Unblocks each execution of an [=atomic waiting operation=] that blocked after observing the result of some atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*this`, and `Y` happens before this call.
 </div>
 
 <div class="numbered">
@@ -846,7 +847,7 @@ void atomic_flag::notify_all() noexcept;
 </xmp>
 
 <div class="numbered">
-*Effects:* Unblocks each execution of an [=atomic waiting operation=] that blocked after observing the result of an atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*object` or `*this`, and `Y` happens before this call.
+*Effects:* Unblocks each execution of an [=atomic waiting operation=] that blocked after observing the result of some atomic operation `X`, if there exists another atomic operation `Y`, such that `X` precedes `Y` in the modification order of `*object` or `*this`, and `Y` happens before this call.
 </div>
 
 <div class="numbered">
