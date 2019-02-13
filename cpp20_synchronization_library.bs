@@ -350,7 +350,7 @@ void wait(T old, memory_order order = memory_order::seq_cst) const noexcept;
 ```
 
 <div class="numbered">
-*Requires:* The `order` argument shall not be `memory_order_release` nor `memory_order_acq_rel`.
+*Expects:* The `order` argument shall not be `memory_order_release` nor `memory_order_acq_rel`.
 </div>
 
 <div class="numbered">
@@ -745,7 +745,7 @@ Unless initialized with `ATOMIC_FLAG_INIT`, it is unspecified whether an `atomic
 </xmp>
 
 <div class="newnumbered">
-*Requires:* The `order` argument shall not be `memory_order_release` nor `memory_order_acq_rel`.
+*Expects:* The `order` argument shall not be `memory_order_release` nor `memory_order_acq_rel`.
 </div>
 
 <div class="newnumbered">
@@ -787,7 +787,7 @@ void atomic_flag::clear(memory_order order = memory_order_seq_cst) volatile noex
 void atomic_flag::clear(memory_order order = memory_order_seq_cst) noexcept;
 </xmp>
 
-*Requires:* The `order` argument shall not be `memory_order_consume`,
+*Expects:* The `order` argument shall not be `memory_order_consume`,
 `memory_order_acquire`, nor `memory_order_acq_rel`.
 
 *Effects:* Atomically sets the value pointed to by `object` or by `this` to
@@ -808,7 +808,7 @@ void atomic_flag::wait(bool old,
 </xmp>
 
 <div class="numbered">
-*Requires:* The `order` argument shall not be `memory_order_release` nor `memory_order_acq_rel`.
+*Expects:* The `order` argument shall not be `memory_order_release` nor `memory_order_acq_rel`.
 </div>
 
 <div class="numbered">
@@ -957,7 +957,7 @@ constexpr explicit counting_semaphore(ptrdiff_t desired);
 ```
 
 <div class="numbered">
-*Requires:* `desired >= 0` and `desired <= max()`.
+*Expects:* `desired >= 0` and `desired <= max()`.
 </div>
 
 <div class="numbered">
@@ -973,7 +973,7 @@ constexpr explicit counting_semaphore(ptrdiff_t desired);
 ```
 
 <div class="numbered">
-*Requires:* For every function call that blocks on `counter`, a function call that will cause it to unblock and return shall happen before this call.
+*Expects:* For every function call that blocks on `counter`, a function call that will cause it to unblock and return shall happen before this call.
 [ *Note:* This relaxes the usual rules, which would have required all wait calls to happen before destruction. — *end note* ]
 </div>
 
@@ -990,7 +990,7 @@ void release(ptrdiff_t update = 1);
 ```
 
 <div class="numbered">
-*Requires:* `update >= 0`, and `counter + update <= max()`. 
+*Expects:* `update >= 0`, and `counter + update <= max()`. 
 </div>
 
 <div class="numbered">
@@ -1129,7 +1129,7 @@ constexpr explicit latch(ptrdiff_t expected);
 ```
 
 <div class="numbered">
-*Requires:* `expected >= 0`. 
+*Expects:* `expected >= 0`. 
 </div>
 
 <div class="numbered">
@@ -1145,7 +1145,7 @@ constexpr explicit latch(ptrdiff_t expected);
 ```
 
 <div class="numbered">
-*Requires:* No threads are blocked at the synchronization point.
+*Expects:* No threads are blocked at the synchronization point.
 </div>
 
 <div class="numbered">
@@ -1165,7 +1165,7 @@ void count_down(ptrdiff_t update = 1);
 ```
 
 <div class="numbered">
-*Requires:* `counter >= update` and `update >= 0`.
+*Expects:* `counter >= update` and `update >= 0`.
 </div>
 
 <div class="numbered">
@@ -1297,7 +1297,7 @@ constexpr explicit barrier(ptrdiff_t expected,
 ```
 
 <div class="numbered">
-*Requires:* `expected >= 0`, and `noexcept(f())` shall be `true`.
+*Expects:* `expected >= 0`, and `noexcept(f())` shall be `true`.
 </div>
 
 <div class="numbered">
@@ -1314,7 +1314,7 @@ constexpr explicit barrier(ptrdiff_t expected,
 ```
 
 <div class="numbered">
-*Requires:* No threads are blocked at a synchronization point for any [=phase=].
+*Expects:* No threads are blocked at a synchronization point for any [=phase=].
 </div>
 
 <div class="numbered">
@@ -1330,7 +1330,7 @@ constexpr explicit barrier(ptrdiff_t expected,
 ```
 
 <div class="numbered">
-*Requires:* `update >= 0` and `update` is not greater than the expected count.
+*Expects:* `update >= 0` and `update` is not greater than the expected count.
 </div>
 
 <div class="numbered">
@@ -1360,7 +1360,7 @@ void wait(arrival_token&& arrival) const;
 ```
 
 <div class="numbered">
-*Requires:* `arrival` is associated with a synchronization point for the current or the immediately preceding [=phases=] of the `barrier`.
+*Expects:* `arrival` is associated with a synchronization point for the current or the immediately preceding [=phases=] of the `barrier`.
 </div>
 
 <div class="numbered">
@@ -1390,7 +1390,7 @@ void arrive_and_drop();
 ```
 
 <div class="numbered">
-*Requires:* The expected number of threads for the current [=phase=] is not `0`. 
+*Expects:* The expected number of threads for the current [=phase=] is not `0`. 
 </div>
 
 <div class="numbered">
