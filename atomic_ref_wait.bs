@@ -1,0 +1,300 @@
+<!--
+Copyright (c) 2019 NVIDIA Corporation 
+Author: David Olsen <dolsen@nvidia.com>
+
+Distributed under the Boost Software License v1.0 (boost.org/LICENSE_1_0.txt)
+-->
+<pre class='metadata'>
+Title: Add wait/notify to atomic_ref&lt;T&gt;
+Shortname: P1643
+Revision: 0
+Status: P
+Group: WG21
+Audience: SG1, LEWG, LWG
+Editor: David Olsen, NVIDIA, dolsen@nvidia.com
+URL: https://wg21.link/P1643R0
+!Source: <a href="https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/blob/master/atomic_ref_wait.bs">GitHub</a>
+Issue Tracking: GitHub https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/issues
+Metadata Order: Author, This Version, Source, Issue Tracking, Project, Audience
+Markup Shorthands: markdown yes
+Toggle Diffs: no
+No Abstract: yes
+Boilerplate: style-syntax-highlighting off
+</pre>
+
+<style>
+pre {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+.ins, ins, ins *, span.ins, span.ins * {
+  background-color: rgb(200, 250, 200);
+  color: rgb(0, 136, 0);
+  text-decoration: none;
+}
+.del, del, del *, span.del, span.del * {
+  background-color: rgb(250, 200, 200);
+  color: rgb(255, 0, 0);
+  text-decoration: line-through;
+  text-decoration-color: rgb(255, 0, 0);
+}
+math, span.math {
+  font-family: serif;
+  font-style: italic;
+}
+ul {
+  list-style-type: "— ";
+}
+blockquote {
+  counter-reset: paragraph;
+}
+div.numbered, div.newnumbered {
+  margin-left: 2em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+div.numbered:before, div.newnumbered:before {
+  position: absolute;
+  margin-left: -2em;
+  display-style: block;
+}
+div.numbered:before {
+  content: counter(paragraph);
+  counter-increment: paragraph;
+}
+div.newnumbered:before {
+  content: "�";
+}
+div.numbered ul, div.newnumbered ul {
+  counter-reset: list_item;
+}
+div.numbered li, div.newnumbered li {
+  margin-left: 3em;
+}
+div.numbered li:before, div.newnumbered li:before {
+  position: absolute;
+  margin-left: -4.8em;
+  display-style: block;
+}
+div.numbered li:before {
+  content: "(" counter(paragraph) "." counter(list_item) ")";
+  counter-increment: list_item;
+}
+div.newnumbered li:before {
+  content: "(�." counter(list_item) ")";
+  counter-increment: list_item;
+}
+</style>
+
+# Introduction # {#intro}
+
+<a href="https://wg21.link/P1135">[P1135]</a> added the member functions
+`wait`, `notify_one`, and
+`notify_all` to `atomic<T>`, but did not add those same member
+functions to `atomic_ref<T>` due in part to scheduling concerns.  This
+paper takes care of that, bringing the interface of `atomic_ref<T>`
+back in line with that of `atomic<T>`.
+
+# Changelog # {#changelog}
+
+**Revision 0:** Initial version.
+
+# Wording # {#wording}
+
+Note: The following changes are relative to the post Kona 2019
+working draft of ISO/IEC 14882, ([[N4810]]), with the changes from
+<a href="https://wg21.link/P1135R5">[P1135R5]</a> merged in.
+
+Modify the section about atomic waiting and notifying operations, [**atomics.wait**], which comes from P1135 not from N4810, as follows:
+
+<blockquote>
+<b>31.� Waiting and notifying <span style="float: right;">[atomics.wait]</span></b>
+
+<div class="numbered">
+<dfn>Atomic waiting operations</dfn> and <dfn>atomic notifying operations</dfn> provide a mechanism to wait for the value of an atomic object to change more efficiently than can be achieved with polling.
+Atomic waiting operations may block until they are unblocked by atomic notifying operations, according to each function’s effects.
+[ *Note:* Programs are not guaranteed to observe transient atomic values, an issue known as the A-B-A problem, resulting in continued blocking if a condition is only temporarily met. – *end note* ]
+</div>
+
+<div class="numbered">
+[ *Note*: The following functions are atomic waiting operations:
+
+  - `atomic<T>::wait`.
+  - `atomic_flag::wait`.
+  - `atomic_wait` and `atomic_wait_explicit`.
+  - `atomic_flag_wait` and `atomic_flag_wait_explicit`.
+  - <ins>`atomic_ref<T>::wait`.</ins>
+
+*- end note* ]
+</div>
+
+<div class="numbered">
+[ *Note*: The following functions are atomic notifying operations:
+
+  - `atomic<T>::notify_one` and `atomic<T>::notify_all`.
+  - `atomic_flag::notify_one` and `atomic_flag::notify_all`.
+  - `atomic_notify_one` and `atomic_notify_all`.
+  - `atomic_flag_notify_one` and `atomic_flag_notify_all`.
+  - <ins>`atomic_ref<T>::notify_one` and `atomic_ref<T>::notify_all`.</ins>
+
+*- end note* ]
+</div>
+
+<div class="numbered">
+A call to an atomic waiting operation on an atomic object `M` is <dfn>eligible to be unblocked</dfn> by a call to an atomic notifying operation on `M` if there exist side effects `X` and `Y` on `M` such that:
+  - the atomic waiting operation has blocked after observing the result of `X`,
+  - `X` precedes `Y` in the modification order of `M`, and
+  - `Y` happens before the call to the atomic notifying operation.
+</div>
+</blockquote>
+
+Modify the class synopsis for `atomic_ref` in <a href="http://eel.is/c++draft/atomics.ref.generic">[**atomics.ref.generic**]</a> as follows:
+
+<blockquote>
+<b>31.6 Class template `atomic_ref` <span style="float: right;">[atomics.ref.generic]</span></b>
+
+<pre><code>
+namespace std {
+&nbsp; template &lt;class T&gt; struct atomic_ref {
+
+    // ...
+  
+    bool compare_exchange_strong(T&, T,
+                   memory_order = memory_order_seq_cst) const noexcept;
+</code></pre>
+<pre class="ins"><code>
+&nbsp;   void wait(T, memory_order = memory_order::seq_cst) const noexcept;
+    void notify_one() noexcept;
+    void notify_all() noexcept;
+</code></pre>
+<pre><code>
+&nbsp; };
+}
+</code></pre>
+</blockquote>
+
+Add the following to the end of <a href="http://eel.is/c++draft/atomics.ref.operations">[**atomics.ref.operations**]</a>:
+
+<blockquote class="ins">
+
+```
+void wait(T old, memory_order order = memory_order::seq_cst) const noexcept;
+```
+
+<div class="numbered">
+*Expects*: `order` is neither `memory_order::release` nor `memory_order::acq_rel`.
+</div>
+
+<div class="numbered">
+*Effects*: Repeatedly performs the following steps, in order:
+
+  - Evaluates `load(order)` and compares its value representation for equality against that of `old`.
+  - If they compare unequal, returns.
+  - Blocks until it is unblocked by an atomic notifying operation or is unblocked spuriously.
+</div>
+
+<div class="numbered">
+*Remarks*: This function is an atomic waiting operation ([**atomics.wait**]) on atomic object `*ptr`.
+</div>
+
+```
+void notify_one() noexcept;
+```
+
+<div class="numbered">
+*Effects*: Unblocks the execution of at least one atomic waiting operation on `*ptr` that is eligible to be unblocked ([**atomics.wait**]) by this call, if any such atomic waiting operations exist.
+</div>
+
+<div class="numbered">
+*Remarks*: This function is an atomic notifying operation ([**atomics.wait**]).
+</div>
+
+```
+void notify_all() noexcept;
+```
+
+<div class="numbered">
+*Effects*: Unblocks the execution of all atomic waiting operations on `*ptr` that are eligible to be unblocked ([**atomics.wait**]) by this call.
+</div>
+
+<div class="numbered">
+*Remarks*: This function is an atomic notifying operation ([**atomics.wait**]).
+</div>
+</blockquote>
+
+Modify the class synopsis for the `atomic_ref` specialization for integral types in <a href="http://eel.is/c++draft/atomics.ref.int">[**atomics.ref.int**]</a> as follows:
+
+<blockquote>
+
+<pre><code>
+namespace std {
+&nbsp; template &lt;&gt; struct atomic_ref&lt;<i>integral</i>&gt; {
+
+    // ...
+
+    bool compare_exchange_strong(<i>integral</i>&, <i>integral</i>,
+                   memory_order = memory_order_seq_cst) const noexcept;
+</code></pre>
+<pre class="ins"><code>
+&nbsp;   void wait(<i>integral</i>, memory_orger = memory_order::seq_cst) const noexcept;
+    void notify_one() noexcept;
+    void notify_all() noexcept;
+</code></pre>
+<pre><code>
+&nbsp;
+&nbsp;   <i>integral</i> fetch_add(<i>integral</i>,
+                   memory_order = memory_order_seq_cst) const noexcept;
+    // ...
+</code></pre>
+</blockquote>
+
+Modify the class synopsis for the `atomic_ref` specialization for floating-point types in <a href="http://eel.is/c++draft/atomics.ref.float">[**atomics.ref.float**]</a> as follows:
+
+<blockquote>
+
+<pre><code>
+namespace std {
+&nbsp; template &lt;&gt; struct atomic_ref&lt;<i>floating-point</i>&gt; {
+
+    // ...
+
+    bool compare_exchange_strong(<i>floating-point</i>&amp;, <i>floating-point</i>,
+                   memory_order = memory_order_seq_cst) const noexcept;
+</code></pre>
+<pre class="ins"><code>
+&nbsp;   void wait(<i>floating-point</i>, memory_orger = memory_order::seq_cst) const noexcept;
+    void notify_one() noexcept;
+    void notify_all() noexcept;
+</code></pre>
+<pre><code>
+&nbsp;
+&nbsp;   <i>floating-point</i> fetch_add(<i>floating-point</i>,
+                   memory_order = memory_order_seq_cst) const noexcept;
+    // ...
+</code></pre>
+</blockquote>
+
+Modify the class synopsis for the `atomic_ref` partial specialization for pointer types in <a href="http://eel.is/c++draft/atomics.ref.pointer">[**atomics.ref.pointer**]</a> as follows:
+
+<blockquote>
+
+<pre><code>
+namespace std {
+&nbsp; template &lt;class T&gt; struct atomic_ref&lt;T*&gt; {
+
+    // ...
+
+    bool compare_exchange_strong(T*&, T*,
+                   memory_order = memory_order_seq_cst) const noexcept;
+</code></pre>
+<pre class="ins"><code>
+&nbsp;   void wait(T*, memory_orger = memory_order::seq_cst) const noexcept;
+    void notify_one() noexcept;
+    void notify_all() noexcept;
+</code></pre>
+<pre><code>
+&nbsp;
+&nbsp;   T* fetch_add(difference_type, memory_order = memory_order_seq_cst) const noexcept;
+    // ...
+</code></pre>
+</blockquote>

@@ -7,7 +7,7 @@ Distributed under the Boost Software License v1.0 (boost.org/LICENSE_1_0.txt)
 <pre class='metadata'>
 Title: The C++20 Synchronization Library
 Shortname: P1135
-Revision: 4
+Revision: 5
 Status: P
 Group: WG21
 Audience: LWG
@@ -16,7 +16,7 @@ Editor: Olivier Giroux, NVIDIA, ogiroux@nvidia.com
 Editor: JF Bastien, Apple, jfbastien@apple.com
 Editor: Detlef Vollmann, dv@vollmann.ch
 Editor: David Olsen, NVIDIA, dolsen@nvidia.com
-URL: https://wg21.link/P1135R3
+URL: https://wg21.link/P1135R5
 !Source: <a href="https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/blob/master/cpp20_synchronization_library.bs">GitHub</a>
 Issue Tracking: GitHub https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/issues
 Metadata Order: Author, This Version, Source, Issue Tracking, Project, Audience
@@ -101,6 +101,16 @@ enhancing existing ones:
   - [[P0995R1]]: `atomic_flag::test` and lockfree integral types.
   - [[P1258R0]]: Don't make C++ unimplementable for small CPUs.
 
+The first part of this paper adds member functions `wait`, `notify_one`,
+and `notify_all` to `atomic<T>`.  It does not add those same member
+functions to `atomic_ref<T>`, `atomic<shared_ptr<T>>`, or
+`atomic<weak_ptr<T>>`.  Those omissions were partly an oversight, because
+the papers for those types were in flight at the same time as this paper.
+Adding `wait`, `notify_one`, and `notify_all` to the other types are not
+being added to this paper, but will be done separately in
+<a href="https://wg21.link/P1643">[P1643R0]</a> and
+<a href="https://wg21.link/P1644">[P1644R0]</a>.
+
 # Changelog # {#changelog}
 
 **Revision 0:** Post Rapperswil 2018 changes from [[P0514R4]], [[P0666R2]], and [[P0995R1]] based on <a href="http://wiki.edg.com/bin/view/Wg21rapperswil2018/P0666">Rapperswil 2018 LEWG feedback</a>.
@@ -136,30 +146,45 @@ enhancing existing ones:
   - Added missing `atomic<T>::wait` and `atomic<T>::notify_*` member functions to the class synopses for the `atomic<T>` integral, floating-point, and pointer specializations.
   - Fixed `atomic<T>::notify_*` member functions to be non `const`.
 
-**Revision 4:** Lots of wording changes based on <a href="http://wiki.edg.com/bin/view/Wg21kona2019/LWG1135Notes">Kona 2019 LWG feedback</a>.  Three design changes to fix bugs that were discovered during LWG review or afterwards while revising the paper.  These will be presented to SG1 in a separate paper (yet to be written) in Cologne.
+**Revision 4:** Lots of wording changes based on <a href="http://wiki.edg.com/bin/view/Wg21kona2019/LWG1135Notes">Kona 2019 LWG feedback</a>.  Three design changes to fix bugs that were discovered during LWG review or afterwards while revising the paper.  These will be presented to SG1 in a separate paper, [[P1633R0]], in Cologne.
 
   - Changed `atomic_flag::test` to be a `const` function.  Changed the `atomic_flag*` parameter of `atomic_flag_test` and `atomic_flag_test_explicit` to be `const atomic_flag*`.
-  - Added the requirement that the `least_max_value` template parameter to `counting_iterator` be greater than zero.
+  - Added the requirement that the `least_max_value` template parameter to `counting_semaphore` be greater than zero.
   - Changed the requirement on the `update` parameter to `barrier::arrive` from `update >= 0` to `update > 0`.
+
+**Revision 5:** Some wording improvements after the post-Kona mailing
+and before the pre-Cologne mailing.
+Incorporated feedback from LWG teleconferences on <a href="http://wiki.edg.com/bin/view/Wg21cologne2019/LWGTelecom7June">7 June</a> and <a href="http://wiki.edg.com/bin/view/Wg21cologne2019/LWGTelecom14June">14 June</a>.
+Rebased the wording to be relative to the post-Kona draft, [[N4810]].
+There is one design change, which will be included in <a href="https://wg21.link/P1633R0">[P1633R0]</a> along with the three changes in R4:
+
+  - Allow `latch::try_wait` to spuriously return `false`.
 
 # Wording # {#wording}
 
-Note: The following changes are relative to the post San Diego 2018 working draft of ISO/IEC 14882, ([[N4791]]).
+Note: The following changes are relative to the post Kona 2019 working draft of ISO/IEC 14882, ([[N4810]]).
 
 Note: The � character is used to denote a placeholder number which shall be selected by the editor.
 
-Add `<semaphore>`, `<latch>`, and `<barrier>` to Table 19 "C++ library headers" in <a href="http://eel.is/c++draft/headers">[**headers**]</a>.
+Add `<semaphore>`, `<latch>`, and `<barrier>` to <a href="http://eel.is/c++draft/headers#tab:headers.cpp">Table 19</a> "C++ library headers" in <a href="http://eel.is/c++draft/headers">[**headers**]</a>.
+
+Modify paragraph 3 in <a href="http://eel.is/c++draft/compliance">16.5.1.3
+[**compliance**]</a> as follows:
+
+<blockquote><div>
+The supplied version of the header `<cstdlib>` shall declare at least the functions `abort`, `atexit`, `at_quick_exit`, `exit`, and `quick_exit` (<a href="http://eel.is/c++draft/support.start.term">17.5</a>). <ins>The supplied version of the header `<atomic>` shall meet the same requirements as for a hosted implementation except that support for always lock-free integral atomic types (<a href="http://eel.is/c++draft/atomics.lockfree">[**atomics.lockfree**]</a>) is optional, and the type aliases `atomic_signed_lock_free` and `atomic_unsigned_lock_free` (<a href="http://eel.is/c++draft/atomics.alias">[**atomics.alias**]</a>) are optional.</ins> The other headers listed in this table shall meet the same requirements as for a hosted implementation.
+</div></blockquote>
 
 Modify the header synopsis for `<atomic>` in <a href="http://eel.is/c++draft/atomics.syn">[**atomics.syn**]</a> as follows:
 
 <blockquote>
-<b>30.2 Header `<atomic>` synopsis <span style="float: right;">[atomics.syn]</span></b>
+<b>31.2 Header `<atomic>` synopsis <span style="float: right;">[atomics.syn]</span></b>
 
 <pre><code>
 namespace std {
   <i>// ...</i>
   
-  <i>// 30.8, non-member functions</i>
+  <i>// 31.8, non-member functions</i>
   <i>// ...</i>
 
 </code></pre>
@@ -187,7 +212,7 @@ namespace std {
 <pre class="ins"><code>    void atomic_notify_all(atomic&lt;T&gt;*);</code></pre>
 <pre><code>
 &nbsp;
-&nbsp; <i>// 30.3, type aliases</i>
+&nbsp; <i>// 31.3, type aliases</i>
   <i>// ...</i>
    
   using atomic_intptr_t       = atomic&lt;intptr_t&gt;;
@@ -202,9 +227,8 @@ namespace std {
 <pre class="ins"><code>  using atomic_unsigned_lock_free = <i>see below</i>;</code></pre>
 <pre><code>
 &nbsp;
-  <i>// ...</i>
 
-  <i>// 30.9, flag type and operations</i>
+  <i>// 31.9, flag type and operations</i>
   struct atomic_flag;
 </code></pre>
 <ins><xmp>
@@ -241,10 +265,10 @@ namespace std {
 </code></pre>
 </blockquote>
 
-Modify <a href="http://eel.is/c++draft/atomics.alias">[**atomics.alias**]</a> as follows:
+Modify <a href="http://eel.is/c++draft/atomics.alias">[**atomics.alias**]</a> as follows, adding a new paragraph to the end:
 
 <blockquote>
-<b>30.3 Type aliases <span style="float: right;">[atomics.alias]</span></b>
+<b>31.3 Type aliases <span style="float: right;">[atomics.alias]</span></b>
 
 <div class="numbered">
 The type aliases `atomic_intN_t`, `atomic_uintN_t`, `atomic_intptr_t`, and `atomic_uintptr_t` are defined if and only if `intN_t`, `uintN_t`, `intptr_t`, and `uintptr_t` are defined, respectively.
@@ -252,55 +276,64 @@ The type aliases `atomic_intN_t`, `atomic_uintN_t`, `atomic_intptr_t`, and `atom
 
 <div class="ins">
 <div class="numbered">
-The type aliases `atomic_signed_lock_free` and `atomic_unsigned_lock_free` are specializations of `atomic` whose template arguments are integral types, respectively signed and unsigned, other than `bool`.
-In <a href="http://eel.is/c++draft/intro.compliance#def:freestanding_implementation">freestanding implementations</a> (4.1), these aliases are optional. Only implementations that provide an integral specialization of `atomic` other than `bool` for which `is_always_lock_free` is true, also provide `atomic_signed_lock_free` and `atomic_unsigned_lock_free`.
-`is_always_lock_free` is `true` for `atomic_signed_lock_free` and `atomic_unsigned_lock_free`.
-[ *Note:* An implementation which provides these type aliases should choose the integral specialization of `atomic` for which the [=atomic waiting and notifying operations=] are most efficient. - *end note* ]
+The type aliases `atomic_signed_lock_free` and `atomic_unsigned_lock_free` name specializations of `atomic` whose template arguments are integral types, respectively signed and unsigned, and whose `is_always_lock_free` property is `true`. [ *Note*: These aliases are optional in freestanding implementations (<a href="http://eel.is/c++draft/compliance">[**compliance**]</a>). - *end note* ] Implementations should choose for these aliases the integral specializations of atomic for which the atomic waiting and notifying operations ([**atomics.wait**]) are most efficient.
 </div>
 </div>
 </blockquote>
 
-Note: The reference to "[=atomic waiting and notifying operations=]" in the above change should refer to the new <a href="http://eel.is/c++draft/atomic.wait">[**atomics.wait**]</a> subclause.
-
-Add a new subclause after <a href="http://eel.is/c++draft/atomics.lockfree">[**atomics.lockfree**]</a>:
+Insert a new paragraph after paragraph 1 in <a href="http://eel.is/c++draft/atomics.lockfree">[**atomics.lockfree**]</a>:
 
 <blockquote class="ins">
-<b>30.� Waiting and notifying <span style="float: right;">[atomics.wait]</span></b>
+At least one signed integral specialization of the `atomic` template, along with the specialization for the corresponding unsigned type (<a href="http://eel.is/c++draft/basic.fundamental">[**basic.fundamental**]</a>), shall be always lock-free. [ *Note*: This requirement is optional in freestanding implementations (<a href="http://eel.is/c++draft/compliance">[**compliance**]</a>). - *end note* ]
+</blockquote>
+
+Add a new subclause after <a href="http://eel.is/c++draft/atomics.lockfree">[**atomics.lockfree**] with the stable name [**atomics.wait**]</a>:
+
+<blockquote class="ins">
+<b>31.� Waiting and notifying <span style="float: right;">[atomics.wait]</span></b>
 
 <div class="numbered">
-<dfn>Atomic waiting and notifying operations</dfn> provide a mechanism to wait for the value of an atomic object to change more efficiently than can be achieved with polling.
+<dfn>Atomic waiting operations</dfn> and <dfn>atomic notifying operations</dfn> provide a mechanism to wait for the value of an atomic object to change more efficiently than can be achieved with polling.
+Atomic waiting operations may block until they are unblocked by atomic notifying operations, according to each function’s effects.
+[ *Note:* Programs are not guaranteed to observe transient atomic values, an issue known as the A-B-A problem, resulting in continued blocking if a condition is only temporarily met. – *end note* ]
 </div>
 
 <div class="numbered">
-The following functions are <dfn>atomic waiting operations</dfn>:
+[ *Note*: The following functions are atomic waiting operations:
 
   - `atomic<T>::wait`.
   - `atomic_flag::wait`.
   - `atomic_wait` and `atomic_wait_explicit`.
   - `atomic_flag_wait` and `atomic_flag_wait_explicit`.
 
+*- end note* ]
 </div>
 
 <div class="numbered">
-The following functions are <dfn>atomic notifying operations</dfn>:
+[ *Note*: The following functions are atomic notifying operations:
 
   - `atomic<T>::notify_one` and `atomic<T>::notify_all`.
   - `atomic_flag::notify_one` and `atomic_flag::notify_all`.
   - `atomic_notify_one` and `atomic_notify_all`.
   - `atomic_flag_notify_one` and `atomic_flag_notify_all`.
 
+*- end note* ]
 </div>
 
 <div class="numbered">
-[=Atomic waiting operations=] may block until they are unblocked by [=atomic notifying operations=], according to each function’s effects.
-[ *Note:* Programs are not guaranteed to observe transient atomic values, an issue known as the A-B-A problem, resulting in continued blocking if a condition is only temporarily met. – *end note* ]
+A call to an atomic waiting operation on an atomic object `M` is <dfn>eligible to be unblocked</dfn> by a call to an atomic notifying operation on `M` if there exist side effects `X` and `Y` on `M` such that:
+  - the atomic waiting operation has blocked after observing the result of `X`,
+  - `X` precedes `Y` in the modification order of `M`, and
+  - `Y` happens before the call to the atomic notifying operation.
 </div>
 </blockquote>
+
+Drafting note: Adding atomic waiting and notifying operations to `atomic_ref<T>` and to `atomic<shared_ptr<T>>` is done in separate papers, <a href="https://wg21.link/P1643">[P1643R0]</a> and <a href="https://wg21.link/P1644">[P1644R0]</a> respectively, not as part of this paper.
 
 Modify <a href="http://eel.is/c++draft/atomics.types.generic">[**atomics.types.generic**]</a> as follows:
 
 <blockquote>
-<b>30.7 Class template `atomic` <span style="float: right;">[atomics.types.generic]</span></b>
+<b>31.7 Class template `atomic` <span style="float: right;">[atomics.types.generic]</span></b>
 
 <pre><code>
 namespace std {
@@ -345,6 +378,8 @@ namespace std {
 </code></pre>
 </blockquote>
 
+Drafting note: The behavior of the non-member functions `atomic_wait`, `atomic_wait_explicit`, `atomic_notify_one`, and `atomic_notify_all` is already covered by <a href="http://eel.is/c++draft/atomics.nonmembers">[**atomics.nonmembers**]</a>.  Only the behavior of the member functions needs to be listed here.
+
 Add the following to the end of <a href="http://eel.is/c++draft/atomics.types.operations">[**atomics.types.operations**]</a>:
 
 <blockquote class="ins">
@@ -362,12 +397,12 @@ void wait(T old, memory_order order = memory_order::seq_cst) const noexcept;
 
   - Evaluates `load(order)` and compares its value representation for equality against that of `old`.
   - If they compare unequal, returns.
-  - Blocks until it is unblocked by an [=atomic notifying operation=] or is unblocked spuriously.
+  - Blocks until it is unblocked by an atomic notifying operation or is unblocked spuriously.
 
 </div>
 
 <div class="numbered">
-*Remarks:* This function is an [=atomic waiting operation=].
+*Remarks:* This function is an atomic waiting operation ([**atomics.wait**]).
 </div>
 
 ```
@@ -376,17 +411,11 @@ void notify_one() noexcept;
 ```
 
 <div class="numbered">
-*Effects:* Given the set *W* of [=atomic waiting operations=] such that:
-
-  - each atomic waiting operation has blocked after observing the result of some atomic operation `X`,
-  - `X` precedes some atomic operation `Y` in the modification order of `*this`, and
-  - `Y` happens before this call.
-
-If the set *W* is not empty, unblocks the execution of one operation in *W*.
+*Effects:* Unblocks the execution of at least one atomic waiting operation that is eligible to be unblocked ([**atomics.wait**]) by this call, if any such atomic waiting operations exist.
 </div>
 
 <div class="numbered">
-*Remarks:* This function is an [=atomic notifying operation=].
+*Remarks:* This function is an atomic notifying operation ([**atomics.wait**]).
 </div>
 
 ```
@@ -395,27 +424,23 @@ void notify_all() noexcept;
 ```
 
 <div class="numbered">
-*Effects:* Unblocks the execution of all [=atomic waiting operations=] such that:
-
-  - each atomic waiting operation has blocked after observing the result of some atomic operation `X`,
-  - `X` precedes some atomic operation `Y` in the modification order of `*this`, and
-  - `Y` happens before this call.
+*Effects:* Unblocks the execution of all atomic waiting operations that are eligible to be unblocked ([**atomics.wait**]) by this call.
 </div>
 
 <div class="numbered">
-*Remarks:* This function is an [=atomic notifying operation=].
+*Remarks:* This function is an atomic notifying operation ([**atomics.wait**]).
 </div>
 </blockquote>
 
 Modify <a href="http://eel.is/c++draft/atomics.types.int#1">[**atomics.types.int**] paragraph 1</a> as follows:
 
 <blockquote>
-<b>30.7.2 Specializations for integers <span style="float: right;">[atomics.types.int]</span></b>
+<b>31.7.2 Specializations for integers <span style="float: right;">[atomics.types.int]</span></b>
 
 <div class="numbered">
 There are specializations of the `atomic` class template for the integral types `char`, `signed char`, `unsigned char`, `short`, `unsigned short`, `int`, `unsigned int`, `long`, `unsigned long`, `long long`, `unsigned long long`, `char8_t`, `char16_t`, `char32_t`, `wchar_t`, and any other types needed by the typedefs in the header `<cstdint>`.
 For each such type <code><i>integral</i></code>, the specialization <code>atomic&lt;<i>integral</i>&gt;</code> provides additional atomic operations appropriate to integral types.
-[ *Note:* For the specialization `atomic<bool>`, see <a href="http://eel.is/c++draft/atomics.types.generic">30.7</a>. — *end note* ]
+[ *Note:* For the specialization `atomic<bool>`, see <a href="http://eel.is/c++draft/atomics.types.generic">31.7</a>. — *end note* ]
 </div>
 
 <pre><code>
@@ -503,7 +528,7 @@ namespace std {
 Modify <a href="http://eel.is/c++draft/atomics.types.float#1">[**atomics.types.float**] paragraph 1</a> as follows:
 
 <blockquote>
-<b>30.7.3 Specializations for floating-point types <span style="float: right;">[atomics.types.float]</span></b>
+<b>31.7.3 Specializations for floating-point types <span style="float: right;">[atomics.types.float]</span></b>
 
 <div class="numbered">
 There are specializations of the `atomic` class template for the floating-point types `float`, `double`, and `long double`.
@@ -582,7 +607,7 @@ namespace std {
 Modify <a href="http://eel.is/c++draft/atomics.types.pointer#1">[**atomics.types.pointer**] paragraph 1</a> as follows:
 
 <blockquote>
-<b>30.7.4 Partial specialization for pointers <span style="float: right;">[atomics.types.pointer]</span></b>
+<b>31.7.4 Partial specialization for pointers <span style="float: right;">[atomics.types.pointer]</span></b>
 
 <pre><code>
 namespace std {
@@ -658,7 +683,7 @@ They each have a trivial default constructor and a trivial destructor.
 Modify <a href="http://eel.is/c++draft/atomics.flag">[**atomics.flag**]</a> as follows:
 
 <blockquote>
-<b>30.9 Flag type and operations <span style="float: right;">[atomics.flag]</span></b>
+<b>31.9 Flag type and operations <span style="float: right;">[atomics.flag]</span></b>
 
 <xmp>
 namespace std {
@@ -759,11 +784,15 @@ Unless initialized with `ATOMIC_FLAG_INIT`, it is unspecified whether an `atomic
 </xmp>
 
 <div class="numbered">
+For `atomic_flag_test`, let `order` be `memory_order::seq_cst`.
+</div>
+
+<div class="numbered">
 *Expects:* `order` is neither `memory_order::release` nor `memory_order::acq_rel`.
 </div>
 
 <div class="numbered">
-*Effects:* Memory is affected according to the value of `order`, or according to `memory_order::seq_cst` for `atomic_flag_test`.
+*Effects:* Memory is affected according to the value of `order`.
 </div>
 
 <div class="numbered">
@@ -801,8 +830,7 @@ void atomic_flag::clear(memory_order order = memory_order::seq_cst) volatile noe
 void atomic_flag::clear(memory_order order = memory_order::seq_cst) noexcept;
 </xmp>
 
-*Expects:* `order` is neither `memory_order::consume`,
-`memory_order::acquire`, nor `memory_order::acq_rel`.
+*Expects:* `order` is neither `memory_order::consume`, `memory_order::acquire`, nor `memory_order::acq_rel`.
 
 *Effects:* Atomically sets the value pointed to by `object` or by `this` to
 `false`. Memory is affected according to the value of `order`.
@@ -822,20 +850,24 @@ void atomic_flag::wait(bool old,
 </xmp>
 
 <div class="numbered">
+For `atomic_flag_wait`, let `order` be `memory_order::seq_cst`.  Let `flag` be `object` for the non-member functions and `this` for the member functions.
+</div>
+
+<div class="numbered">
 *Expects:* `order` is neither `memory_order::release` nor `memory_order::acq_rel`.
 </div>
 
 <div class="numbered">
-*Effects:* Let `af` be `object` for the non-member functions and `this` for the member functions.  Let `mo` be `memory_order::seq_cst` for `atomic_flag_wait` and the value of `order` for the other functions.  Repeatedly performs the following steps, in order:
+*Effects:* Repeatedly performs the following steps, in order:
 
-  - Evaluates `af->load(mo) != old`.
+  - Evaluates `flag->test(order) != old`.
   - If the result of that evaluation is `true`, returns.
-  - Blocks until it is unblocked by an [=atomic notifying operation=] or is unblocked spuriously.
+  - Blocks until it is unblocked by an atomic notifying operation or is unblocked spuriously.
 
 </div>
 
 <div class="numbered">
-*Remarks:* This function is an [=atomic waiting operation=].
+*Remarks:* This function is an atomic waiting operation ([**atomics.wait**]).
 </div>
 
 <xmp>
@@ -846,17 +878,11 @@ void atomic_flag::notify_one() noexcept;
 </xmp>
 
 <div class="numbered">
-*Effects:* Given the set *W* of [=atomic waiting operations=] such that:
-
-  - the atomic waiting operation blocked after observing the result of some atomic operation `X`,
-  - `X` precedes some atomic operation `Y` in the modification order of `*object` or `*this`, and
-  - `Y` happens before this call.
-
-If the set *W* is not empty, unblocks the execution of one operation in set *W*.
+*Effects:* Unblocks the execution of at least one atomic waiting operation that is eligible to be unblocked ([**atomics.wait**]) by this call, if any such atomic waiting operations exist.
 </div>
 
 <div class="numbered">
-*Remarks:* This function is an [=atomic notifying operation=].
+*Remarks:* This function is an atomic notifying operation ([**atomics.wait**]).
 </div>
 
 <xmp>
@@ -867,15 +893,11 @@ void atomic_flag::notify_all() noexcept;
 </xmp>
 
 <div class="numbered">
-*Effects:* Unblocks the execution of all [=atomic waiting operations=] such that:
-
-  - the atomic waiting operation blocked after observing the result of some atomic operation `X`,
-  - `X` precedes some atomic operation `Y` in the modification order of `*object` or `*this`, and
-  - `Y` happens before this call.
+*Effects:* Unblocks the execution of all atomic waiting operations that are eligible to be unblocked ([**atomics.wait**]) by this call.
 </div>
 
 <div class="numbered">
-*Remarks:* This function is an [=atomic notifying operation=].
+*Remarks:* This function is an atomic notifying operation ([**atomics.wait**]).
 </div>
 
 </div>
@@ -889,33 +911,32 @@ Table 134 — Thread support library summary
 </div>
 <table border=1 style="margin: auto;">
 <tr>             <th></th>     <th>Subclause</th>            <th>Header(s)</th> </tr>
-<tr>             <td>31.2</td> <td>Requirements</td>         <td></td> </tr>
-<tr>             <td>31.3</td> <td>Threads</td>              <td>`<thread>`</td> </tr>
-<tr>             <td>31.4</td> <td>Mutual exclusion</td>     <td>`<mutex>` `<shared_mutex>`</td> </tr>
-<tr>             <td>31.5</td> <td>Condition variables</td>  <td>`<condition_variable>`</td> </tr>
-<tr class="ins"> <td>31.�</td> <td>Semaphores</td>           <td>`<semaphore>`</td> </tr>
-<tr class="ins"> <td>31.�</td> <td>Latches and barriers</td> <td>`<latch>` `<barrier>`</td> </tr>
-<tr>             <td>31.6</td> <td>Futures</td>              <td>`<future>`</td> </tr>
+<tr>             <td>32.2</td> <td>Requirements</td>         <td></td> </tr>
+<tr>             <td>32.3</td> <td>Threads</td>              <td>`<thread>`</td> </tr>
+<tr>             <td>32.4</td> <td>Mutual exclusion</td>     <td>`<mutex>` `<shared_mutex>`</td> </tr>
+<tr>             <td>32.5</td> <td>Condition variables</td>  <td>`<condition_variable>`</td> </tr>
+<tr class="ins"> <td>32.�</td> <td>Semaphores</td>           <td>`<semaphore>`</td> </tr>
+<tr class="ins"> <td>32.�</td> <td>Latches and barriers</td> <td>`<latch>` `<barrier>`</td> </tr>
+<tr>             <td>32.6</td> <td>Futures</td>              <td>`<future>`</td> </tr>
 </table>
 </blockquote>
 
 Add two new subclauses after <a href="http://eel.is/c++draft/thread.condition">[**thread.condition**]</a>:
 
 <blockquote class="ins">
-<b>31.� Semaphores <span style="float: right;">[thread.semaphore]</span></b>
+<b>32.� Semaphores <span style="float: right;">[thread.semaphore]</span></b>
 
 <div class="numbered">
 Semaphores are lightweight synchronization primitives used to constrain concurrent access to a shared resource. They are widely used to implement other synchronization primitives and, whenever both are applicable, can be more efficient than condition variables.
 </div>
 
 <div class="numbered">
-A counting semaphore is a semaphore object that models a non-negative resource count. A binary semaphore is a semaphore object that has only two states known as available and unavailable.
-[ *Note:* A binary semaphore should be more efficient than a counting semaphore with a unit magnitude count. – *end note* ]
+A counting semaphore is a semaphore object that models a non-negative resource count. A binary semaphore is a semaphore object that has only two states. A binary semaphore should be more efficient than the default implementation of a counting semaphore with a unit resource count.
 </div>
 </blockquote>
 
 <blockquote class="ins">
-<b>31.�.1 Header `<semaphore>` synopsis <span style="float: right;">[thread.semaphore.syn]</span></b>
+<b>32.�.1 Header `<semaphore>` synopsis <span style="float: right;">[thread.semaphore.syn]</span></b>
 
 <pre><code>
 namespace std {  
@@ -928,11 +949,11 @@ namespace std {
 </blockquote>
 
 <blockquote class="ins">
-<b>31.�.2 Class template `counting_semaphore` <span style="float: right;">[thread.semaphore.counting.class]</span></b>
+<b>32.�.2 Class template `counting_semaphore` <span style="float: right;">[thread.semaphore.counting.class]</span></b>
 
 <pre><code>
 namespace std {
-  template&lt;ptrdiff_t least_max_value&gt;
+  template&lt;ptrdiff_t least_max_value = <i>implementation-defined</i>&gt;
   class counting_semaphore {
   public:
     static constexpr ptrdiff_t max() noexcept;
@@ -962,11 +983,11 @@ Class `counting_semaphore` maintains an internal counter that is initialized whe
 </div>
 
 <div class="numbered">
-`least_max_value` shall be greater than zero.
+`least_max_value` shall be greater than zero; otherwise the program is ill-formed.
 </div>
 
 <div class="numbered">
-`counting_semaphore`s permit concurrent invocation of the `release`, `acquire`, `try_acquire`, `try_acquire_for`, and `try_acquire_until` member functions.
+Concurrent invocations of the member functions of `counting_semaphore`, other than its destructor, do not introduce data races.  The member functions `release` and `try_acquire` shall execute atomically.
 </div>
 
 ```
@@ -982,7 +1003,7 @@ constexpr explicit counting_semaphore(ptrdiff_t desired);
 ```
 
 <div class="numbered">
-*Expects:* `desired` is greater than or equal to zero and less than or equal to `max()`.
+*Expects:* `desired >= 0` is `true`, and `desired <= max()` is `true`.
 </div>
 
 <div class="numbered">
@@ -1007,7 +1028,7 @@ void release(ptrdiff_t update = 1);
 ```
 
 <div class="numbered">
-*Expects:* `update` is greater than or equal to zero, and `counter + update` is less than or equal to `max()`.
+*Expects:* `update >= 0` is `true`, and `update <= max() - counter` is `true`.
 </div>
 
 <div class="numbered">
@@ -1020,11 +1041,11 @@ void release(ptrdiff_t update = 1);
 
 <!-- Based on std::mutex::lock wording -->
 <div class="numbered">
-*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">31.2.2</a>).
+*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">[**thread.req.exception**]</a>).
 </div>
 
 <div class="numbered">
-*Error conditions:* Any of the error conditions allowed for mutex types (<a href="http://eel.is/c++draft/thread.mutex.requirements.mutex">31.4.3.2</a>).
+*Error conditions:* Any of the error conditions allowed for mutex types (<a href="http://eel.is/c++draft/thread.mutex.requirements.mutex">[**thread.mutex.requirements.mutex**]</a>).
 </div>
 
 ```
@@ -1034,7 +1055,7 @@ bool try_acquire() noexcept;
 <div class="numbered">
 *Effects:*
 
-  - With low probability, returns immediately. [ *Note:* An implementation should ensure that `try_acquire` does not consistently return `false` in the absence of contending acquisitions. — *end note* ] 
+  - With low probability, returns immediately. An implementation should ensure that `try_acquire` does not consistently return `false` in the absence of contending acquisitions.
   - Otherwise, if `counter` is greater than zero, atomically decrement `counter` by one.
 
 </div>
@@ -1057,11 +1078,11 @@ void acquire();
 
 <!-- Based on std::mutex::lock wording -->
 <div class="numbered">
-*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">31.2.2</a>).
+*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">[**thread.req.exception**]</a>).
 </div>
 
 <div class="numbered">
-*Error conditions:* Any of the error conditions allowed for mutex types (<a href="http://eel.is/c++draft/thread.mutex.requirements.mutex">31.4.3.2</a>).
+*Error conditions:* Any of the error conditions allowed for mutex types (<a href="http://eel.is/c++draft/thread.mutex.requirements.mutex">[**thread.mutex.requirements.mutex**]</a>).
 </div>
 
 ```
@@ -1077,37 +1098,39 @@ template<class Clock, class Duration>
   - Evaluates `try_acquire`. If the result is `true`, returns `true`. 
   - Blocks on `*this` until `counter` is greater than zero or until the timeout expires.  If it is unblocked by the timeout expiring, returns `false`.
 
-The timeout expires when the current time is after `abs_time` (for `try_acquire_until`) or when at least `rel_time` has passed from the start of the function (for `try_acquire_for`).
+The timeout expires (<a href="http://eel.is/c++draft/thread.req.timing">[**thread.req.timing**]</a>)
+when the current time is after `abs_time` (for `try_acquire_until`) or when at least
+`rel_time` has passed from the start of the function (for `try_acquire_for`).
 </div>
 
 <!-- Based on std::timed_mutex::try_lock_for wording -->
 <div class="numbered">
-*Throws:* Timeout-related exceptions (<a href="http://eel.is/c++draft/thread.req.timing">31.2.4</a>), or `system_error` when a non-timeout-related exception is required (<a href="http://eel.is/c++draft/thread.req.exception">31.2.2</a>).
+*Throws:* Timeout-related exceptions (<a href="http://eel.is/c++draft/thread.req.timing">[**thread.req.timing**]</a>), or `system_error` when a non-timeout-related exception is required (<a href="http://eel.is/c++draft/thread.req.exception">[**thread.req.exception**]</a>).
 </div>
 
 <div class="numbered">
-*Error conditions:* Any of the error conditions allowed for mutex types (<a href="http://eel.is/c++draft/thread.mutex.requirements.mutex">31.4.3.2</a>).
+*Error conditions:* Any of the error conditions allowed for mutex types (<a href="http://eel.is/c++draft/thread.mutex.requirements.mutex">[**thread.mutex.requirements.mutex**]</a>).
 </div>
 </blockquote>
 
 <blockquote class="ins">
-<b>31.� Coordination Types <span style="float: right;">[thread.coord]</span></b>
+<b>32.� Coordination Types <span style="float: right;">[thread.coord]</span></b>
 
 <div class="numbered">
-This subclause describes various concepts related to thread coordination, and defines the coordination types `latch` and `barrier`. These types facilitate concurrent computation performed by a number of threads. Concurrent invocations of the member functions of `latch` and `barrier`, other than their destructors, do not introduce data races.
+This subclause describes various concepts related to thread coordination, and defines the coordination types `latch` and `barrier`. These types facilitate concurrent computation performed by a number of threads.
 </div>
 </blockquote>
 
 <blockquote class="ins">
-<b>31.�.1 Latches <span style="float: right;">[thread.coord.latch]</span></b>
+<b>32.�.1 Latches <span style="float: right;">[thread.coord.latch]</span></b>
 
 <div class="numbered">
-A latch is a thread coordination mechanism that allows any number of threads to block until the latch is arrived at (via the `count_down` function) an expected number of times.  The expected count is set when the latch is created.  An individual latch is a single-use object; once the expected count has been reached, the latch cannot be reused.
+A latch is a thread coordination mechanism that allows any number of threads to block until an expected number of threads arrive at the latch (via the `count_down` function).  The expected count is set when the latch is created.  An individual latch is a single-use object; once the expected count has been reached, the latch cannot be reused.
 </div>
 </blockquote>
 
 <blockquote class="ins">
-<b>31.�.1.1 Header `<latch>` synopsis <span style="float: right;">[thread.coord.latch.syn]</span></b>
+<b>32.�.1.1 Header `<latch>` synopsis <span style="float: right;">[thread.coord.latch.syn]</span></b>
 
 <xmp>
 namespace std {
@@ -1117,7 +1140,7 @@ namespace std {
 </blockquote>
 
 <blockquote class="ins">
-<b>31.�.1.2 Class `latch` <span style="float: right;">[thread.coord.latch.class]</span></b>
+<b>32.�.1.2 Class `latch` <span style="float: right;">[thread.coord.latch.class]</span></b>
 
 <pre><code>
 namespace std {
@@ -1144,12 +1167,16 @@ namespace std {
 A `latch` maintains an internal counter that is initialized when the `latch` is created. Threads can block on the latch object, waiting for `counter` to be decremented to zero.
 </div>
 
+<div class="numbered">
+Concurrent invocations of the member functions of `latch`, other than its destructor, do not introduce data races. The member functions `count_down` and `try_wait` shall execute atomically.
+</div>
+
 ```
 constexpr explicit latch(ptrdiff_t expected);
 ```
 
 <div class="numbered">
-*Expects:* `expected` is greater than or equal to zero.
+*Expects:* `expected >= 0` is `true`.
 </div>
 
 <div class="numbered">
@@ -1177,7 +1204,7 @@ void count_down(ptrdiff_t update = 1);
 ```
 
 <div class="numbered">
-*Expects:* `update` is greater than or equal to zero, and `update` is less than or equal to `counter`.
+*Expects:* `update >= 0` is `true`, and `update <= counter` is `true`.
 </div>
 
 <div class="numbered">
@@ -1185,16 +1212,16 @@ void count_down(ptrdiff_t update = 1);
 </div>
 
 <div class="numbered">
-*Synchronization:* Synchronizes with the returns from all calls that are unblocked.
+*Synchronization:* Strongly happens before the returns from all calls that are unblocked.
 </div>
 
 <!-- Based on std::mutex::lock wording -->
 <div class="numbered">
-*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">31.2.2</a>).
+*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">[**thread.req.exception**]</a>).
 </div>
 
 <div class="numbered">
-*Error conditions:* Any of the error conditions allowed for mutex types (<a href="http://eel.is/c++draft/thread.mutex.requirements.mutex">31.4.3.2</a>).
+*Error conditions:* Any of the error conditions allowed for mutex types (<a href="http://eel.is/c++draft/thread.mutex.requirements.mutex">[**thread.mutex.requirements.mutex**]</a>).
 </div>
 
 ```
@@ -1202,7 +1229,7 @@ bool try_wait() const noexcept;
 ```
 
 <div class="numbered">
-*Returns:* `counter == 0`. 
+*Returns:* With very low probability `false`.  Otherwise `counter == 0`.
 </div>
 
 ```
@@ -1210,16 +1237,16 @@ void wait() const;
 ```
 
 <div class="numbered">
-*Effects:* If `counter` equals zero, returns immediately. Otherwise, blocks on `*this` until it is unblocked by a call to `count_down` that decrements `counter` to zero.
+*Effects:* If `counter` equals zero, returns immediately. Otherwise, blocks on `*this` until a call to `count_down` that decrements `counter` to zero.
 </div>
 
 <!-- Based on std::mutex::lock wording -->
 <div class="numbered">
-*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">31.2.2</a>).
+*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">[**thread.req.exception**]</a>).
 </div>
 
 <div class="numbered">
-*Error conditions:* Any of the error conditions allowed for mutex types (<a href="http://eel.is/c++draft/thread.mutex.requirements.mutex">31.4.3.2</a>).
+*Error conditions:* Any of the error conditions allowed for mutex types (<a href="http://eel.is/c++draft/thread.mutex.requirements.mutex">[**thread.mutex.requirements.mutex**]</a>).
 </div>
 
 ```
@@ -1228,51 +1255,44 @@ void arrive_and_wait(ptrdiff_t update = 1);
 
 <div class="numbered">
 *Effects:* Equivalent to:
-  - `count_down(update);`
-  - `wait();`
-</div>
-
-<!-- Based on std::mutex::lock wording -->
-<div class="numbered">
-*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">31.2.2</a>).
-</div>
-
-<div class="numbered">
-*Error conditions:* Any of the error conditions allowed for mutex types (<a href="http://eel.is/c++draft/thread.mutex.requirements.mutex">31.4.3.2</a>).
+<pre><code>
+&nbsp; count_down(update);
+  wait();
+</code></pre>
 </div>
 </blockquote>
 
 <blockquote class="ins">
-<b>31.�.2 Barriers <span style="float: right;">[thread.coord.barrier]</span></b>
+<b>32.�.2 Barriers <span style="float: right;">[thread.coord.barrier]</span></b>
 
 <div class="numbered">
-A barrier is a thread coordination mechanism whose lifetime consists of a sequence of [=phases=], where each phase allows a certain number of threads to arrive at the barrier and then wait for all the other threads to also arrive at the barrier.  [ *Note:* A barrier is useful for managing repeated tasks that are handled by multiple threads. - *end note* ]
+A barrier is a thread coordination mechanism whose lifetime consists of a sequence of barrier phases, where each phase allows at most an expected number of threads to block until the expected number of threads arrive at the barrier.  [ *Note:* A barrier is useful for managing repeated tasks that are handled by multiple threads. - *end note* ]
 </div>
 </blockquote>
 
 <blockquote class="ins">
-<b>31.�.2.1 Header `<barrier>` synopsis <span style="float: right;">[thread.coord.barrier.syn]</span></b>
+<b>32.�.2.1 Header `<barrier>` synopsis <span style="float: right;">[thread.coord.barrier.syn]</span></b>
 
 <pre><code>
 namespace std {
-  template&lt;class CompletionFunction = <i>unspecified</i>&gt;
+  template&lt;class CompletionFunction = <i>see below</i>&gt;
     class barrier;
 }
 </code></pre>
 </blockquote>
 
 <blockquote class="ins">
-<b>31.�.2.2 Class template `barrier` <span style="float: right;">[thread.coord.barrier.class]</span></b>
+<b>32.�.2.2 Class template `barrier` <span style="float: right;">[thread.coord.barrier.class]</span></b>
 
 <pre><code>
 namespace std {
-  template&ltclass CompletionFunction&gt;
+  template&ltclass CompletionFunction = <i>see below</i>&gt;
   class barrier {
   public:
     using arrival_token = <i>see below</i>;
 
-    constexpr explicit barrier(ptrdiff_t expected,
-                               CompletionFunction f = {});
+    constexpr explicit barrier(ptrdiff_t phase_count,
+                               CompletionFunction f = CompletionFunction());
 
     ~barrier();
 
@@ -1292,46 +1312,53 @@ namespace std {
 </code></pre>
 
 <div class="numbered">
-Each <dfn>phase</dfn> of the barrier consists of the following steps:
+Each <dfn>barrier phase</dfn> consists of the following steps:
 
-  - The expected count is reset to what was specified by the `expected` argument to the constructor, possibly adjusted by calls to `arrive_and_drop`.
-  - The expected count is decremented by each call to `arrive`.
-  - When the expected count reaches zero, the [=completion step=] is run on one of the threads that arrived at the barrier during the phase.
-  - When the completion step finishes, the next phase starts.
+  - The expected count is decremented by each call to `arrive` or `arrive_and_drop`.
+  - When the expected count reaches zero, the phase completion step is run. For the specialization with the default value of the `CompletionFunction` template parameter, the completion step is run atomically as part of the call to `arrive` or `arrive_and_drop` that caused the expected count to reach zero. For other specializations, the completion step is run on one of the threads that arrived at the barrier during the phase.
+  - When the completion step finishes, the expected count is reset to what was specified by the `expected` argument to the constructor, possibly adjusted by calls to `arrive_and_drop`, and the next phase starts.
 </div>
 
 <div class="numbered">
-Each phase defines a <dfn>synchronization point</dfn>.  Threads that arrive at the barrier during the phase can block on the phase's synchronization point by calling `wait`, and will remain blocked until the phase completes.
+Each phase defines a <dfn>phase synchronization point</dfn>.  Threads that arrive at the barrier during the phase can block on the phase synchronization point by calling `wait`, and will remain blocked until the phase completion step is run.
 </div>
 
 <div class="numbered">
-The <dfn>completion step</dfn> that is executed at the end of each phase has the following effects:
+The <dfn>phase completion step</dfn> that is executed at the end of each phase has the following effects:
 
   - Invokes the completion function, equivalent to `completion()`.
-  - Unblocks all threads that are blocked on the phase's synchronization point.
+  - Unblocks all threads that are blocked on the phase synchronization point.
 
-The end of the completion step strongly happens before the returns from all calls that were unblocked by the completion step.
+The end of the completion step strongly happens before the returns from all calls that were unblocked by the completion step.  For specializations that do not have the default value of the `CompletionFunction` template parameter, the behavior is undefined if any of the `barrier` object's member functions other than `wait` are called while the completion step is in progress.
 </div>
 
 <div class="numbered">
-`CompletionFunction` shall meet the *Cpp17MoveConstructible* (Table <a href="http://eel.is/c++draft/utility.arg.requirements#tab:moveconstructible">26</a>) requirements and *Cpp17Destructable* (Table <a href="http://eel.is/c++draft/utility.arg.requirements#tab:destructible">30</a>) requirements. `is_invocable_r_v<void, CompletionFunction>` shall be `true`, and `noexcept(declval<CompletionFunction>()())` shall be `true`.
+Concurrent invocations of the member functions of `barrier`, other than its destructor, do not introduce data races. The member functions `arrive` and `arrive_and_drop` shall execute atomically.
 </div>
 
 <div class="numbered">
-`barrier::arrival_token` is an unspecified type, such that `is_nothrow_move_constructible_v<barrier::arrival_token>` is `true` and `is_nothrow_move_assignable_v<barrier::arrival_token>` is `true`.
+`CompletionFunction` shall meet the *Cpp17MoveConstructible* requirements (Table <a href="http://eel.is/c++draft/utility.arg.requirements#tab:moveconstructible">26</a>) and the *Cpp17Destructible* requirements (Table <a href="http://eel.is/c++draft/utility.arg.requirements#tab:destructible">30</a>). `is_nothrow_invocable_v<CompletionFunction&>` shall be `true`.
+</div>
+
+<div class="numbered">
+The default value of the `CompletionFunction` template parameter is an unspecified type, such that, in addition to satisfying the requirements of `CompletionFunction`, it meets the *Cpp17DefaultConstructible* requirements (Table <a href="http://eel.is/c++draft/utility.arg.requirements#tab:defaultconstructible">25</a>) and `completion()` has no effects.
+</div>
+
+<div class="numbered">
+`barrier::arrival_token` is an unspecified type, such that it meets the *Cpp17MoveConstructible* (Table <a href="http://eel.is/c++draft/utility.arg.requirements#tab:moveconstructible">26</a>), *Cpp17MoveAssignable* (Table <a href="http://eel.is/c++draft/utility.arg.requirements#tab:moveassignable">28</a>), and *Cpp17Destructible* (Table <a href="http://eel.is/c++draft/utility.arg.requirements#tab:destructible">30</a>) requirements.
 </div>
 
 ```
-constexpr explicit barrier(ptrdiff_t expected,
-                           CompletionFunction f = {});
+constexpr explicit barrier(ptrdiff_t phase_count,
+                           CompletionFunction f = CompletionFunction());
 ```
 
 <div class="numbered">
-*Expects:* `expected` is greater than or equal to zero.
+*Expects:* `phase_count >= 0` is `true`.
 </div>
 
 <div class="numbered">
-*Effects:* Sets the initial expected count for each [=phase=] to `expected`.  Initializes `completion` with `std::move(f)`.  Starts the first phase. [ *Note:* If `expected` is `0` this object can only be destroyed. — *end note* ]
+*Effects:* Sets both the initial expected count for each barrier phase and the current expected count for the first phase to `phase_count`.  Initializes `completion` with `std::move(f)`.  Starts the first phase. [ *Note:* If `phase_count` is `0` this object can only be destroyed. — *end note* ]
 </div>
 
 <!-- Based on std::function::function wording -->
@@ -1344,7 +1371,7 @@ constexpr explicit barrier(ptrdiff_t expected,
 ```
 
 <div class="numbered">
-*Expects:* No threads are blocked at a [=synchronization point=] for any [=phase=] of this object. [ *Note:* May be called even if some threads have not yet returned from invocations of `wait`, provided that they have unblocked. This relaxes the usual rules, which would have required all blocking function calls to happen before destruction. - *end note* ]
+*Expects:* No threads are blocked at a phase synchronization point for any barrier phase of this object. [ *Note:* May be called even if some threads have not yet returned from invocations of `wait`, provided that they have unblocked. This relaxes the usual rules, which would have required all blocking function calls to happen before destruction. - *end note* ]
 </div>
 
 <div class="numbered">
@@ -1356,15 +1383,15 @@ constexpr explicit barrier(ptrdiff_t expected,
 ```
 
 <div class="numbered">
-*Expected:* `update` is greater than zero, and `update` is less than or equal to the expected count.
+*Expects:* `update > 0` is `true`, and `update` is less than or equal to the expected count for the current barrier phase.
 </div>
 
 <div class="numbered">
-*Effects:* Constructs an object of type `arrival_token` that is associated with the `barrier`'s [=synchronization point=] for the current [=phase=].  Then, decrements the expected count by `update`.
+*Effects:* Constructs an object of type `arrival_token` that is associated with the phase synchronization point for the current phase.  Then, decrements the expected count by `update`.
 </div>
 
 <div class="numbered">
-*Synchronization:* The call to `arrive` strongly happens before the start of the [=completion step=] for the current phase.
+*Synchronization:* The call to `arrive` strongly happens before the start of the phase completion step for the current phase.
 </div>
 
 <div class="numbered">
@@ -1373,11 +1400,11 @@ constexpr explicit barrier(ptrdiff_t expected,
 
 <!-- Based on std::mutex::lock wording -->
 <div class="numbered">
-*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">31.2.2</a>).
+*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">[**thread.req.exception**]</a>).
 </div>
 
 <div class="numbered">
-*Error conditions:* Any of the error conditions allowed for mutex types (<a href="http://eel.is/c++draft/thread.mutex.requirements.mutex">31.4.3.2</a>).
+*Error conditions:* Any of the error conditions allowed for mutex types (<a href="http://eel.is/c++draft/thread.mutex.requirements.mutex">[**thread.mutex.requirements.mutex**]</a>).
 </div>
 
 <div class="numbered">
@@ -1390,20 +1417,20 @@ void wait(arrival_token&& arrival) const;
 ```
 
 <div class="numbered">
-*Expects:* `arrival` is associated with the [=synchronization point=] for the current or the immediately preceding [=phase=] of the same barrier object.
+*Expects:* `arrival` is associated with the phase synchronization point for the current phase or the immediately preceding phase of the same barrier object.
 </div>
 
 <div class="numbered">
-*Effects:* Blocks at the synchronization point associated with `std::move(arrival)` until the [=completion step=] of the synchronization point's phase is run. [ *Note:* If `arrival` is associated with the synchronization point for a previous phase, the call returns immediately. - *end note* ]
+*Effects:* Blocks at the synchronization point associated with `std::move(arrival)` until the phase completion step of the synchronization point's phase is run. [ *Note:* If `arrival` is associated with the synchronization point for a previous phase, the call returns immediately. - *end note* ]
 </div>
 
 <!-- Based on std::mutex::lock wording -->
 <div class="numbered">
-*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">31.2.2</a>).
+*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">[**thread.req.exception**]</a>).
 </div>
 
 <div class="numbered">
-*Error conditions:* Any of the error conditions allowed for mutex types (<a href="http://eel.is/c++draft/thread.mutex.requirements.mutex">31.4.3.2</a>).
+*Error conditions:* Any of the error conditions allowed for mutex types (<a href="http://eel.is/c++draft/thread.mutex.requirements.mutex">[**thread.mutex.requirements.mutex**]</a>).
 </div>
 
 ```
@@ -1411,24 +1438,7 @@ void arrive_and_wait();
 ```
 
 <div class="numbered">
-*Expects:* The expected count for the current [=phase=] is greater than zero.
-</div>
-
-<div class="numbered">
-*Effects:* Equivalent to `wait(arrive())`.
-</div>
-
-<!-- Based on std::mutex::lock wording -->
-<div class="numbered">
-*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">31.2.2</a>).
-</div>
-
-<div class="numbered">
-*Error conditions:* Any of the error conditions allowed for mutex types (<a href="http://eel.is/c++draft/thread.mutex.requirements.mutex">31.4.3.2</a>).
-</div>
-
-<div class="numbered">
-*Remarks:* This call can cause the [=completion step=] for the current phase to start.
+*Effects:* Equivalent to: `wait(arrive())`.
 </div>
 
 ``` 
@@ -1436,7 +1446,7 @@ void arrive_and_drop();
 ```
 
 <div class="numbered">
-*Expects:* The expected count for the current [=phase=] is greater than zero. 
+*Expects:* The expected count for the current barrier phase is greater than zero. 
 </div>
 
 <div class="numbered">
@@ -1444,16 +1454,16 @@ void arrive_and_drop();
 </div>
 
 <div class="numbered">
-*Synchronization:* The call to `arrive_and_drop` strongly happens before the start of the [=completion step=] for the current phase.
+*Synchronization:* The call to `arrive_and_drop` strongly happens before the start of the phase completion step for the current phase.
 </div>
 
 <!-- Based on std::mutex::lock wording -->
 <div class="numbered">
-*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">31.2.2</a>).
+*Throws:* `system_error` when an exception is required (<a href="http://eel.is/c++draft/thread.req.exception">[**thread.req.exception**]</a>).
 </div>
 
 <div class="numbered">
-*Error conditions:* Any of the error conditions allowed for mutex types (<a href="http://eel.is/c++draft/thread.mutex.requirements.mutex">31.4.3.2</a>).
+*Error conditions:* Any of the error conditions allowed for mutex types (<a href="http://eel.is/c++draft/thread.mutex.requirements.mutex">[**thread.mutex.requirements.mutex**]</a>).
 </div>
 
 <div class="numbered">
@@ -1465,7 +1475,7 @@ Create the following feature test macros with the given headers, adding them to 
 
   - `__cpp_lib_atomic_lock_free_type_aliases` in `<atomic>`, which implies that `atomic_signed_lock_free` and `atomic_unsigned_lock_free` types are available.
   - `__cpp_lib_atomic_flag_test` in `<atomic>`, which implies the `test` methods and free functions for `atomic_flag` are available.
-  - `__cpp_lib_atomic_wait` in `<atomic>`, which implies the `notify_*` and `wait` methods and free functions for `atomic` and `atomic_flag` are available.
+  - `__cpp_lib_atomic_wait` in `<atomic>`, which implies the `wait`, `notify_one`, and `notify_all` methods and free functions for `atomic` and `atomic_flag` are available.
   - `__cpp_lib_semaphore` in `<semaphore>`, which implies that `counting_semaphore` and `binary_semaphore` are available.
   - `__cpp_lib_latch` in `<latch>`, which implies that `latch` is available.
   - `__cpp_lib_barrier` in `<barrier>`, which implies that `barrier` is available.
