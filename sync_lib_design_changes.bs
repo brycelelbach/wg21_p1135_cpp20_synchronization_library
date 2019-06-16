@@ -1,0 +1,252 @@
+<!--
+Copyright (c) 2019 NVIDIA Corporation 
+Author: David Olsen <dolsen@nvidia.com>
+
+Distributed under the Boost Software License v1.0 (boost.org/LICENSE_1_0.txt)
+-->
+<pre class='metadata'>
+Title: Amendments to the C++20 Synchronization Library
+Shortname: P1633
+Revision: 0
+Status: P
+Group: WG21
+Audience: SG1
+Editor: David Olsen, NVIDIA, dolsen@nvidia.com
+Editor: Olivier Giroux, NVIDIA, ogiroux@nvidia.com
+URL: https://wg21.link/P1633R0
+!Source: <a href="https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/blob/master/sync_lib_design_changes.bs">GitHub</a>
+Issue Tracking: GitHub https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/issues
+Metadata Order: Author, This Version, Source, Issue Tracking, Project, Audience
+Markup Shorthands: markdown yes
+Toggle Diffs: no
+No Abstract: yes
+Boilerplate: style-syntax-highlighting off
+</pre>
+
+<style>
+pre {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+.ins, ins, ins *, span.ins, span.ins * {
+  background-color: rgb(200, 250, 200);
+  color: rgb(0, 136, 0);
+  text-decoration: none;
+}
+.del, del, del *, span.del, span.del * {
+  background-color: rgb(250, 200, 200);
+  color: rgb(255, 0, 0);
+  text-decoration: line-through;
+  text-decoration-color: rgb(255, 0, 0);
+}
+math, span.math {
+  font-family: serif;
+  font-style: italic;
+}
+ul {
+  list-style-type: "— ";
+}
+blockquote {
+  counter-reset: paragraph;
+}
+div.numbered, div.newnumbered {
+  margin-left: 2em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+div.numbered:before, div.newnumbered:before {
+  position: absolute;
+  margin-left: -2em;
+  display-style: block;
+}
+div.numbered:before {
+  content: counter(paragraph);
+  counter-increment: paragraph;
+}
+div.newnumbered:before {
+  content: "�";
+}
+div.numbered ul, div.newnumbered ul {
+  counter-reset: list_item;
+}
+div.numbered li, div.newnumbered li {
+  margin-left: 3em;
+}
+div.numbered li:before, div.newnumbered li:before {
+  position: absolute;
+  margin-left: -4.8em;
+  display-style: block;
+}
+div.numbered li:before {
+  content: "(" counter(paragraph) "." counter(list_item) ")";
+  counter-increment: list_item;
+}
+div.newnumbered li:before {
+  content: "(�." counter(list_item) ")";
+  counter-increment: list_item;
+}
+</style>
+
+# Introduction # {#intro}
+
+During the wording review of the C++20 Synchronization Library,
+[[P1135R4]], four design flaws were found in the paper.  Rather than
+send the entire paper back to SG1 to look over the changes and risk
+missing the deadline for C++20, this new paper is being written for SG1
+to review.
+
+The wording changes here have already been applied to
+<a href="https://wg21.link/P1135R5">[P1135R5]</a>.  If
+SG1 approves these changes, then P1135 will go to LWG in its current
+state.  If any of the changes are rejected by SG1, then the change will
+be backed out of P1135, by applying the wording change in this paper in
+reverse, before LWG gives its final approval to P1135.
+
+# Changelog # {#changelog}
+
+**Revision 0:** Initial version.
+
+# Make atomic_flag::test const
+
+## Motivation
+
+`atomic_flag::test` does not modify the `atomic_flag` object at all,
+so it should be a `const` member function.  Similarly, the first
+parameter to `atomic_flag_test` and `atomic_flag_test_explicit` should
+be of type `const atomic_flag*` or `const volatile atomic_flag*`.
+
+This bug seems to have been here from the beginning.  See [[P0995R0]].
+There is no record of a discussion of the const-ness of these functions.
+
+## Wording
+
+Modify the header synopsis for `<atomic>` in
+<a href="http://eel.is/c++draft/atomics.syn">[**atomics.syn**]</a>
+as follows:
+
+<blockquote>
+<pre><code>
+&nbsp; <i>// 30.9, flag type and operations</i>
+  struct atomic_flag;
+  bool atomic_flag_test(<ins>const</ins> volatile atomic_flag*) noexcept;
+  bool atomic_flag_test(<ins>const</ins> atomic_flag*) noexcept;
+  bool atomic_flag_test_explicit(<ins>const</ins> volatile atomic_flag*, memory_order) noexcept;
+  bool atomic_flag_test_explicit(<ins>const</ins> atomic_flag*, memory_order) noexcept;
+</code></pre>
+</blockquote>
+
+Modify <a href="http://eel.is/c++draft/atomics.flag">[**atomics.flag**]</a>
+as follows:
+
+<blockquote>
+<b>30.9 Flag type and operations <span style="float: right;">[atomics.flag]</span></b>
+
+<pre><code>
+namespace std {
+&nbsp; struct atomic_flag {
+    bool test(memory_order = memory_order::seq_cst) <ins>const</ins> volatile noexcept;
+    bool test(memory_order = memory_order::seq_cst) <ins>const</ins> noexcept;
+
+    // ...
+  };
+
+  bool atomic_flag_test(<ins>const</ins> volatile atomic_flag*) noexcept;
+  bool atomic_flag_test(<ins>const</ins> atomic_flag*) noexcept;
+  bool atomic_flag_test_explicit(<ins>const</ins> volatile atomic_flag*, memory_order) noexcept;
+  bool atomic_flag_test_explicit(<ins>const</ins> atomic_flag*, memory_order) noexcept;
+
+  //...
+}
+</code></pre>
+</blockquote>
+
+Still within section
+<a href="http://eel.is/c++draft/atomics.flag">[**atomics.flag**]</a>,
+change the function signatures between paragraph 4 and paragraph 5 as
+follows:
+
+<blockquote>
+<pre><code>
+bool atomic_flag_test(<ins>const</ins> volatile atomic_flag* object) noexcept;
+bool atomic_flag_test(<ins>const</ins> atomic_flag* object) noexcept;
+bool atomic_flag_test_explicit(<ins>const</ins> volatile atomic_flag* object, memory_order order) noexcept;
+bool atomic_flag_test_explicit(<ins>const</ins> atomic_flag* object, memory_order order) noexcept;
+bool atomic_flag::test(memory_order order = memory_order::seq_cst) <ins>const</ins> volatile noexcept;
+bool atomic_flag::test(memory_order order = memory_order::seq_cst) <ins>const</ins> noexcept;
+</code></pre>
+</blockquote>
+
+# Prohibit counting_semaphore&lt;-1&gt;
+
+## Motivation
+
+<pre><code>
+&nbsp; template&lt;ptrdiff_t least_max_value = <i>implementation-defined</i>&gt;
+    class counting_semaphore;
+</code></pre>
+
+Template class `counting_semaphore` has a non-type template parameter
+`least_max_value` which is intended to put an upper limit on the number
+of times a semaphore of that type can be simultaneously acquired.
+
+[[P1135R3]] had no restrictions on the value of `least_max_value`.
+There was nothing that prevented users from using
+`counting_semaphore<0>` or `counting_semaphore<-20>`, neither of which
+can do anything useful.
+
+## Wording
+
+Insert a new paragraph after paragraph 1 in [thread.semaphore.counting.class]:
+
+<blockquote class="ins">
+<div>`least_max_value` shall be greater than zero; otherwise the program is ill-formed.</div>
+</blockquote>
+
+# Prohibit barrier::arrive(0)
+
+## Motivation
+
+[[P0666R2]] and early versions of P1135 did not put any lower limit on the
+value of the `update` parameter for `barrier::arrive(ptrdiff_t update)`.
+While working on [[P1135R4]], wording was added to require that
+`update >= 0`, since negative values don't make sense.  During
+<a href="http://wiki.edg.com/bin/view/Wg21kona2019/LWG1135Notes">LWG
+wording review</a> in Kona, Dan Sunderland pointed out that
+`barrier::arrive(0)` would be problematic for implementations that used
+a fan-in strategy rather than a counter, since it would allow threads
+to wait on the barrier without arriving at the barrier.  `arrive(0)` is
+of dubious usefulness even without the implementation problem, so the
+lower bound of `update` is changed from zero to one, making `arrive(0)`
+undefined behavior, the same as `arrive(-1)`.
+
+## Wording
+
+Change paragraph 13 in [thread.coord.barrier.class] as follows:
+
+<blockquote>
+```
+[[nodiscard]] arrival_token arrive(ptrdiff_t update = 1);
+```
+
+<div>
+*Expects:* <code>update <del>&gt;=</del><ins>&gt;</ins> 0</code> is `true`, and `update` is less than or equal to the expected count for the current barrier phase.
+</div>
+</blockquote>
+
+# Allow latch::try_wait() to fail spuriously
+
+## Motivation
+
+The old wording for `latch::try_wait` of "<i>Returns:</i> `counter == 0`" implied that implementations needed to use `memory_order::seq_cst` for `counter` so that `try_wait` would immediately see the result of a different thread's call to `count_down`.  The new wording that allows `try_wait` to spuriously return `false` frees the implementation to use a more relaxed memory order.
+
+## Wording
+
+Change paragraph 13 in [thread.coord.latch.class] as follows:
+
+<blockquote>
+```
+bool try_wait() const noexcept;
+```
+
+<div><i>Returns:</i> <ins>With very low probability `false`.  Otherwise</ins> `counter == 0`</div>
+</blockquote>

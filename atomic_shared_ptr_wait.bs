@@ -1,0 +1,256 @@
+<!--
+Copyright (c) 2019 NVIDIA Corporation 
+Author: David Olsen <dolsen@nvidia.com>
+
+Distributed under the Boost Software License v1.0 (boost.org/LICENSE_1_0.txt)
+-->
+<pre class='metadata'>
+Title: Add wait/notify to atomic&lt;shared_ptr&lt;T&gt;&gt;
+Shortname: P1644
+Revision: 0
+Status: P
+Group: WG21
+Audience: SG1, LEWG, LWG
+Editor: David Olsen, NVIDIA, dolsen@nvidia.com
+URL: https://wg21.link/P1644R0
+!Source: <a href="https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/blob/master/atomic_shared_ptr_wait.bs">GitHub</a>
+Issue Tracking: GitHub https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/issues
+Metadata Order: Author, This Version, Source, Issue Tracking, Project, Audience
+Markup Shorthands: markdown yes
+Toggle Diffs: no
+No Abstract: yes
+Boilerplate: style-syntax-highlighting off
+</pre>
+
+<style>
+pre {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+.ins, ins, ins *, span.ins, span.ins * {
+  background-color: rgb(200, 250, 200);
+  color: rgb(0, 136, 0);
+  text-decoration: none;
+}
+.del, del, del *, span.del, span.del * {
+  background-color: rgb(250, 200, 200);
+  color: rgb(255, 0, 0);
+  text-decoration: line-through;
+  text-decoration-color: rgb(255, 0, 0);
+}
+math, span.math {
+  font-family: serif;
+  font-style: italic;
+}
+ul {
+  list-style-type: "— ";
+}
+blockquote {
+  counter-reset: paragraph;
+}
+div.numbered, div.newnumbered {
+  margin-left: 2em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+div.numbered:before, div.newnumbered:before {
+  position: absolute;
+  margin-left: -2em;
+  display-style: block;
+}
+div.numbered:before {
+  content: counter(paragraph);
+  counter-increment: paragraph;
+}
+div.newnumbered:before {
+  content: "�";
+}
+div.numbered ul, div.newnumbered ul {
+  counter-reset: list_item;
+}
+div.numbered li, div.newnumbered li {
+  margin-left: 3em;
+}
+div.numbered li:before, div.newnumbered li:before {
+  position: absolute;
+  margin-left: -4.8em;
+  display-style: block;
+}
+div.numbered li:before {
+  content: "(" counter(paragraph) "." counter(list_item) ")";
+  counter-increment: list_item;
+}
+div.newnumbered li:before {
+  content: "(�." counter(list_item) ")";
+  counter-increment: list_item;
+}
+</style>
+
+# Introduction # {#intro}
+
+<a href="https://wg21.link/P1135">[P1135]</a> added the member
+functions `wait`, `notify_one`, and
+`notify_all` to `atomic<T>`, but did not add those same member
+functions to `atomic<shared_ptr<T>>` or `atomic<weak_ptr<T>>` due to
+an oversight.  This paper takes care of that, bringing the interfaces
+of `atomic<shared_ptr<T>>` and `atomic<weak_ptr<T>>` back in line
+with that of `atomic<T>`.
+
+# Changelog # {#changelog}
+
+**Revision 0:** Initial version.
+
+# Wording # {#wording}
+
+Note: The following changes are relative to the post Kona 2019 working draft of ISO/IEC 14882, ([[N4810]]), with the changes from
+<a href="https://wg21.link/P1135R5">[P1135R5]</a> merged in.
+
+Modify the class synopsis in <a href="http://eel.is/c++draft/util.smartptr.atomic.shared">[**util.smartptr.atomic.shared**]</a> as follows:
+
+<blockquote>
+<pre><code>
+namespace std {
+&nbsp; template&lt;class T&gt; struct atomic&lt;shared_ptr&lt;T&gt;&gt; {
+
+    // ...
+    
+    bool compare_exchange_strong(shared_ptr&lt;T&gt;&amp; expected, shared_ptr&lt;T&gt; desired,
+                   memory_order order = memory_order::seq_cst) noexcept;
+&nbsp;
+</code></pre>
+<pre class="ins"><code>
+&nbsp;   void wait(shared_ptr&lt;T&gt; old, memory_order order = memory_order::seq_cst) const noexcept;
+    void notify_one() noexcept;
+    void notify_all() noexcept;
+</code></pre>
+<pre><code>
+&nbsp;
+&nbsp;   constexpr atomic() noexcept = default;
+    // ...
+</code></pre>
+</blockquote>
+
+Add the following to the end of <a href="http://eel.is/c++draft/util.smartptr.atomic.shared">[**util.smartptr.atomic.shared**]</a>:
+
+<blockquote class="ins">
+
+```
+void wait(shared_ptr<T> old, memory_order order = memory_order::seq_cst) const noexcept;
+```
+
+<div class="numbered">
+*Expects*: `order` is neither `memory_order::release` nor `memory_order::acq_rel`.
+</div>
+
+<div class="numbered">
+*Effects*: Repeatedly performs the following steps, in order:
+
+  - Evaluates `load(order)` and compares it to `old`.
+  - If the two are not equivalent, returns.
+  - Blocks until it is unblocked by an [=atomic notifying operation=] or is unblocked spuriously.
+</div>
+
+<!-- The wording for "equivalent" comes from atomic<shared_ptr<T>>::compare_exchange_strong(), [util.smartptr.atomic.shared]/p18. -->
+<div class="numbered">
+*Remarks*: Two `shared_ptr` objects are equivalent if they store the same pointer and either share ownership or are both empty.  This function is an atomic waiting operation ([**atomics.wait**]).
+</div>
+
+```
+void notify_one() noexcept;
+```
+
+<div class="numbered">
+*Effects*: Unblocks the execution of at least one atomic waiting operation that is eligible to be unblocked ([**atomics.wait**]) by this call, if any such atomic waiting operations exist.
+</div>
+
+<div class="numbered">
+*Remarks*: This function is an atomic notifying operation ([**atomics.wait**]).
+</div>
+
+```
+void notify_all() noexcept;
+```
+
+<div class="numbered">
+*Effects*: Unblocks the execution of all atomic waiting operations that are eligible to be unblocked ([**atomics.wait**]) by this call.
+</div>
+
+<div class="numbered">
+*Remarks*: This function is an atomic notifying operation ([**atomics.wait**]).
+</div>
+</blockquote>
+
+Modify the class synopsis in <a href="http://eel.is/c++draft/util.smartptr.atomic.weak">[**util.smartptr.atomic.weak**]</a> as follows:
+
+<blockquote>
+<pre><code>
+namespace std {
+&nbsp; template&lt;class T&gt; struct atomic&lt;weak_ptr&lt;T&gt;&gt; {
+
+    // ...
+    
+    bool compare_exchange_strong(weak_ptr&lt;T&gt;&amp; expected, weak_ptr&lt;T&gt; desired,
+                   memory_order order = memory_order::seq_cst) noexcept;
+&nbsp;
+</code></pre>
+<pre class="ins"><code>
+&nbsp;   void wait(weak_ptr&lt;T&gt; old, memory_order order = memory_order::seq_cst) const noexcept;
+    void notify_one() noexcept;
+    void notify_all() noexcept;
+</code></pre>
+<pre><code>
+&nbsp;
+&nbsp;   constexpr atomic() noexcept = default;
+    // ...
+</code></pre>
+</blockquote>
+
+Add the following to the end of <a href="http://eel.is/c++draft/util.smartptr.atomic.weak">[**util.smartptr.atomic.weak**]</a>:
+
+<blockquote class="ins">
+
+```
+void wait(weak_ptr<T> old, memory_order order = memory_order::seq_cst) const noexcept;
+```
+
+<div class="numbered">
+*Expects*: `order` is neither `memory_order::release` nor `memory_order::acq_rel`.
+</div>
+
+<div class="numbered">
+*Effects*: Repeatedly performs the following steps, in order:
+
+  - Evaluates `load(order)` and compares it to `old`.
+  - If the two are not equivalent, returns.
+  - Blocks until it is unblocked by an atomic notifying operation or is unblocked spuriously.
+</div>
+
+<!-- The wording for "equivalent" comes from atomic<shared_ptr<T>>::compare_exchange_strong(), [util.smartptr.atomic.shared]/p18. -->
+<div class="numbered">
+*Remarks: Two `weak_ptr` objects are equivalent if they store the same pointer and either share ownership or are both empty.  This function is an atomic waiting operation ([**atomics.wait**]).
+</div>
+
+```
+void notify_one() noexcept;
+```
+
+<div class="numbered">
+*Effects*: Unblocks the execution of at least one atomic waiting operation that is eligible to be unblocked ([**atomics.wait**]) by this call, if any such atomic waiting operations exist.
+</div>
+
+<div class="numbered">
+*Remarks*: This function is an atomic notifying operation ([**atomics.wait**]).
+</div>
+
+```
+void notify_all() noexcept;
+```
+
+<div class="numbered">
+*Effects*: Unblocks the execution of all atomic waiting operations that are eligible to be unblocked ([**atomics.wait**]) by this call.
+</div>
+
+<div class="numbered">
+*Remarks*: This function is an atomic notifying operation ([**atomics.wait**]).
+</div>
+</blockquote>
