@@ -249,8 +249,10 @@ namespace std {
 </code></pre>
 <pre class="ins"><code>  void atomic_flag_wait(const volatile atomic_flag*, bool) noexcept;</code></pre>
 <pre class="ins"><code>  void atomic_flag_wait(const atomic_flag*, bool) noexcept;</code></pre>
-<pre class="ins"><code>  void atomic_flag_wait_explicit(const volatile atomic_flag*, bool, memory_order) noexcept;</code></pre>
-<pre class="ins"><code>  void atomic_flag_wait_explicit(const atomic_flag*, bool, memory_order) noexcept;</code></pre>
+<pre class="ins"><code>  void atomic_flag_wait_explicit(const volatile atomic_flag*,</code></pre>
+<pre class="ins"><code>                                 bool, memory_order) noexcept;</code></pre>
+<pre class="ins"><code>  void atomic_flag_wait_explicit(const atomic_flag*,</code></pre>
+<pre class="ins"><code>                                 bool, memory_order) noexcept;</code></pre>
 <pre class="ins"><code>  void atomic_flag_notify_one(volatile atomic_flag*) noexcept;</code></pre>
 <pre class="ins"><code>  void atomic_flag_notify_one(atomic_flag*) noexcept;</code></pre>
 <pre class="ins"><code>  void atomic_flag_notify_all(volatile atomic_flag*) const noexcept;</code></pre>
@@ -354,10 +356,14 @@ namespace std {
     bool compare_exchange_weak(T&amp;, T, memory_order, memory_order) noexcept;
     bool compare_exchange_strong(T&amp;, T, memory_order, memory_order) volatile noexcept;
     bool compare_exchange_strong(T&amp;, T, memory_order, memory_order) noexcept;
-    bool compare_exchange_weak(T&amp;, T, memory_order = memory_order::seq_cst) volatile noexcept;
-    bool compare_exchange_weak(T&amp;, T, memory_order = memory_order::seq_cst) noexcept;
-    bool compare_exchange_strong(T&amp;, T, memory_order = memory_order::seq_cst) volatile noexcept;
-    bool compare_exchange_strong(T&amp;, T, memory_order = memory_order::seq_cst) noexcept;
+    bool compare_exchange_weak(T&amp;, T,
+                               memory_order = memory_order::seq_cst) volatile noexcept;
+    bool compare_exchange_weak(T&amp;, T,
+                               memory_order = memory_order::seq_cst) noexcept;
+    bool compare_exchange_strong(T&amp;, T,
+                                 memory_order = memory_order::seq_cst) volatile noexcept;
+    bool compare_exchange_strong(T&amp;, T,
+                                 memory_order = memory_order::seq_cst) noexcept;
 </code></pre>
 <pre class="ins"><code>    void wait(T, memory_order = memory_order::seq_cst) const volatile noexcept;</code></pre>
 <pre class="ins"><code>    void wait(T, memory_order = memory_order::seq_cst) const noexcept;</code></pre>
@@ -570,8 +576,10 @@ namespace std {
     bool compare_exchange_strong(<i>floating-point</i>&amp;, <i>floating-point</i>,
                                  memory_order = memory_order::seq_cst) noexcept;
 </code></pre>
-<pre class="ins"><code>    void wait(<i>floating-point</i>, memory_order = memory_order::seq_cst) const volatile noexcept;</code></pre>
-<pre class="ins"><code>    void wait(<i>floating-point</i>, memory_order = memory_order::seq_cst) const noexcept;</code></pre>
+<pre class="ins"><code>    void wait(<i>floating-point</i>,</code></pre>
+<pre class="ins"><code>              memory_order = memory_order::seq_cst) const volatile noexcept;</code></pre>
+<pre class="ins"><code>    void wait(<i>floating-point</i>,</code></pre>
+<pre class="ins"><code>              memory_order = memory_order::seq_cst) const noexcept;</code></pre>
 <pre class="ins"><code>    void notify_one() volatile noexcept;</code></pre>
 <pre class="ins"><code>    void notify_one() noexcept;</code></pre>
 <pre class="ins"><code>    void notify_all() volatile noexcept;</code></pre>
@@ -579,13 +587,13 @@ namespace std {
 <pre><code>
 &nbsp;
     <i>floating-point</i> fetch_add(<i>floating-point</i>,
-                                    memory_order = memory_order::seq_cst) volatile noexcept;
+                             memory_order = memory_order::seq_cst) volatile noexcept;
     <i>floating-point</i> fetch_add(<i>floating-point</i>,
-                                    memory_order = memory_order::seq_cst) noexcept;
+                             memory_order = memory_order::seq_cst) noexcept;
     <i>floating-point</i> fetch_sub(<i>floating-point</i>,
-                                    memory_order = memory_order::seq_cst) volatile noexcept;
+                             memory_order = memory_order::seq_cst) volatile noexcept;
     <i>floating-point</i> fetch_sub(<i>floating-point</i>,
-                                    memory_order = memory_order::seq_cst) noexcept;
+                             memory_order = memory_order::seq_cst) noexcept;
 
     atomic() noexcept = default;
     constexpr atomic(<i>floating-point</i>) noexcept;
@@ -733,8 +741,10 @@ namespace std {
 <ins><xmp>
   void atomic_flag_wait(const volatile atomic_flag*, bool) noexcept;
   void atomic_flag_wait(const atomic_flag*, bool) noexcept;
-  void atomic_flag_wait_explicit(const volatile atomic_flag*, bool, memory_order) noexcept;
-  void atomic_flag_wait_explicit(const atomic_flag*, bool, memory_order) noexcept;
+  void atomic_flag_wait_explicit(const volatile atomic_flag*, 
+                                 bool, memory_order) noexcept;
+  void atomic_flag_wait_explicit(const atomic_flag*, 
+                                 bool, memory_order) noexcept;
   void atomic_flag_notify_one(volatile atomic_flag*) noexcept;
   void atomic_flag_notify_one(atomic_flag*) noexcept;
   void atomic_flag_notify_all(volatile atomic_flag*) const noexcept;
@@ -777,10 +787,14 @@ Unless initialized with `ATOMIC_FLAG_INIT`, it is unspecified whether an `atomic
 <xmp>
    bool atomic_flag_test(const volatile atomic_flag* object) noexcept;
    bool atomic_flag_test(const atomic_flag* object) noexcept;
-   bool atomic_flag_test_explicit(const volatile atomic_flag* object, memory_order order) noexcept;
-   bool atomic_flag_test_explicit(const atomic_flag* object, memory_order order) noexcept;
-   bool atomic_flag::test(memory_order order = memory_order::seq_cst) const volatile noexcept;
-   bool atomic_flag::test(memory_order order = memory_order::seq_cst) const noexcept;
+   bool atomic_flag_test_explicit(const volatile atomic_flag* object,
+                                  memory_order order) noexcept;
+   bool atomic_flag_test_explicit(const atomic_flag* object,
+                                  memory_order order) noexcept;
+   bool atomic_flag::test(memory_order order =
+                            memory_order::seq_cst) const volatile noexcept;
+   bool atomic_flag::test(memory_order order =
+                            memory_order::seq_cst) const noexcept;
 </xmp>
 
 <div class="numbered">
@@ -805,9 +819,12 @@ For `atomic_flag_test`, let `order` be `memory_order::seq_cst`.
    bool atomic_flag_test_and_set(atomic_flag* object) noexcept;
    bool atomic_flag_test_and_set_explicit(volatile atomic_flag* object,
                                           memory_order order) noexcept;
-   bool atomic_flag_test_and_set_explicit(atomic_flag* object, memory_order order) noexcept;
-   bool atomic_flag::test_and_set(memory_order order = memory_order::seq_cst) volatile noexcept;
-   bool atomic_flag::test_and_set(memory_order order = memory_order::seq_cst) noexcept;
+   bool atomic_flag_test_and_set_explicit(atomic_flag* object,
+                                          memory_order order) noexcept;
+   bool atomic_flag::test_and_set(memory_order order =
+                                    memory_order::seq_cst) volatile noexcept;
+   bool atomic_flag::test_and_set(memory_order order =
+                                    memory_order::seq_cst) noexcept;
 </xmp>
 
 <div class="numbered">
@@ -825,9 +842,12 @@ void atomic_flag_clear(volatile atomic_flag* object) noexcept;
 void atomic_flag_clear(atomic_flag* object) noexcept;
 void atomic_flag_clear_explicit(volatile atomic_flag* object,
                                 memory_order order) noexcept;
-void atomic_flag_clear_explicit(atomic_flag* object, memory_order order) noexcept;
-void atomic_flag::clear(memory_order order = memory_order::seq_cst) volatile noexcept;
-void atomic_flag::clear(memory_order order = memory_order::seq_cst) noexcept;
+void atomic_flag_clear_explicit(atomic_flag* object,
+                                memory_order order) noexcept;
+void atomic_flag::clear(memory_order order =
+                          memory_order::seq_cst) volatile noexcept;
+void atomic_flag::clear(memory_order order = 
+                          memory_order::seq_cst) noexcept;
 </xmp>
 
 *Expects:* `order` is neither `memory_order::consume`, `memory_order::acquire`, nor `memory_order::acq_rel`.
@@ -843,10 +863,10 @@ void atomic_flag_wait_explicit(const volatile atomic_flag* object,
                                bool old, memory_order order) noexcept;
 void atomic_flag_wait_explicit(const atomic_flag* object,
                                bool old, memory_order order) noexcept;
-void atomic_flag::wait(bool old,
-                       memory_order order = memory_order::seq_cst) const volatile noexcept;
-void atomic_flag::wait(bool old,
-                       memory_order order = memory_order::seq_cst) const noexcept;
+void atomic_flag::wait(bool old, memory_order order =
+                         memory_order::seq_cst) const volatile noexcept;
+void atomic_flag::wait(bool old, memory_order order =
+                         memory_order::seq_cst) const noexcept;
 </xmp>
 
 <div class="numbered">
