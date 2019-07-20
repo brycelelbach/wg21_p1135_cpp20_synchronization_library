@@ -117,14 +117,9 @@ namespace std {
     bool compare_exchange_strong(shared_ptr&lt;T&gt;&amp; expected, shared_ptr&lt;T&gt; desired,
                    memory_order order = memory_order::seq_cst) noexcept;
 &nbsp;
-</code></pre>
-<pre class="ins"><code>
-&nbsp;   void wait(shared_ptr&lt;T&gt; old, memory_order order = memory_order::seq_cst) const noexcept;
+<div class="ins">    void wait(shared_ptr&lt;T&gt; old, memory_order order = memory_order::seq_cst) const noexcept;
     void notify_one() noexcept;
-    void notify_all() noexcept;
-</code></pre>
-<pre><code>
-&nbsp;
+    void notify_all() noexcept;</div>
 &nbsp;   constexpr atomic() noexcept = default;
     // ...
 </code></pre>
@@ -192,14 +187,9 @@ namespace std {
     bool compare_exchange_strong(weak_ptr&lt;T&gt;&amp; expected, weak_ptr&lt;T&gt; desired,
                    memory_order order = memory_order::seq_cst) noexcept;
 &nbsp;
-</code></pre>
-<pre class="ins"><code>
-&nbsp;   void wait(weak_ptr&lt;T&gt; old, memory_order order = memory_order::seq_cst) const noexcept;
+<div class="ins">    void wait(weak_ptr&lt;T&gt; old, memory_order order = memory_order::seq_cst) const noexcept;
     void notify_one() noexcept;
-    void notify_all() noexcept;
-</code></pre>
-<pre><code>
-&nbsp;
+    void notify_all() noexcept;</div>
 &nbsp;   constexpr atomic() noexcept = default;
     // ...
 </code></pre>
@@ -227,7 +217,7 @@ void wait(weak_ptr<T> old, memory_order order = memory_order::seq_cst) const noe
 
 <!-- The wording for "equivalent" comes from atomic<shared_ptr<T>>::compare_exchange_strong(), [util.smartptr.atomic.shared]/p18. -->
 <div class="numbered">
-*Remarks: Two `weak_ptr` objects are equivalent if they store the same pointer and either share ownership or are both empty.  This function is an atomic waiting operation ([**atomics.wait**]).
+*Remarks*: Two `weak_ptr` objects are equivalent if they store the same pointer and either share ownership or are both empty.  This function is an atomic waiting operation ([**atomics.wait**]).
 </div>
 
 ```

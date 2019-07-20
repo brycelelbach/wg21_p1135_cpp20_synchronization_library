@@ -7,13 +7,13 @@ Distributed under the Boost Software License v1.0 (boost.org/LICENSE_1_0.txt)
 <pre class='metadata'>
 Title: Amendments to the C++20 Synchronization Library
 Shortname: P1633
-Revision: 0
+Revision: 1
 Status: P
 Group: WG21
 Audience: SG1
 Editor: David Olsen, NVIDIA, dolsen@nvidia.com
 Editor: Olivier Giroux, NVIDIA, ogiroux@nvidia.com
-URL: https://wg21.link/P1633R0
+URL: https://wg21.link/P1633R1
 !Source: <a href="https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/blob/master/sync_lib_design_changes.bs">GitHub</a>
 Issue Tracking: GitHub https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/issues
 Metadata Order: Author, This Version, Source, Issue Tracking, Project, Audience
@@ -90,13 +90,12 @@ div.newnumbered li:before {
 # Introduction # {#intro}
 
 During the wording review of the C++20 Synchronization Library,
-[[P1135R4]], four design flaws were found in the paper.  Rather than
+[[P1135R4]], five design flaws were found in the paper.  Rather than
 send the entire paper back to SG1 to look over the changes and risk
 missing the deadline for C++20, this new paper is being written for SG1
 to review.
 
-The wording changes here have already been applied to
-<a href="https://wg21.link/P1135R5">[P1135R5]</a>.  If
+The wording changes here have already been applied to [[P1135R5]].  If
 SG1 approves these changes, then P1135 will go to LWG in its current
 state.  If any of the changes are rejected by SG1, then the change will
 be backed out of P1135, by applying the wording change in this paper in
@@ -104,7 +103,9 @@ reverse, before LWG gives its final approval to P1135.
 
 # Changelog # {#changelog}
 
-**Revision 0:** Initial version.
+**Revision 0:** Initial version.  Included first four changes.
+
+**Revision 1:** Add a fifth change, which removes the *Expects* clauses on the destructors of `counting_semaphore`, `latch`, and `barrier`.  Include the results of SG1 discussion of the paper in Cologne.
 
 # Make atomic_flag::test const
 
@@ -250,3 +251,72 @@ bool try_wait() const noexcept;
 
 <div><i>Returns:</i> <ins>With very low probability `false`.  Otherwise</ins> `counter == 0`</div>
 </blockquote>
+
+# Remove *Expects* clauses from destructors
+
+## Motivation
+
+[[P1135R5]] had *Expects* clauses on the destructors of classes `counting_semaphore`, `latch`, and `barrier` which essentially stated that no threads were blocked on the object but that some threads could still have not returned from the member functions that had blocked.  That wording was a committee invention, modeled on the behavior of `condition_variable`, and was not based on existing practice.  That wording imposes an implementation burden that was not fully understood when the wording was adopted.  It would impose a cost on all users whether or not they take advantage of the additional freedom the wording grants, which goes against the principle of zero-cost overhead.
+
+Because the wording is a requirement on the implementation, it can always be added back later if it is determined that zero-cost implementations are possible or that the cost is worth the benefit to the user of easier-to-write correct code.  But if that wording goes into C++20, it would be difficult to remove it later because that would introduce undefined behavior into valid C++20 programs.
+
+## Wording
+
+Remove paragraph 8 from [thread.semaphore.counting.class]:
+
+<blockquote class="del">
+```
+~counting_semaphore();
+```
+
+<div class="numbered">
+*Expects:* For every function call blocked on `*this`, a function call that will cause it to unblock and return has happened before this call.
+[ *Note:* This relaxes the usual rules, which would have required all blocking function calls to happen before destruction. — *end note* ]
+</div>
+</blockquote>
+
+Remove paragraphs 6 and 7 from [thread.coord.latch.class]:
+
+<blockquote class="del">
+```
+~latch();
+```
+
+<div class="numbered">
+*Expects:* No threads are blocked on `*this`. [ *Note:* May be called even if some threads have not yet returned from invocations of `wait` on this object, provided that they are unblocked. This relaxes the usual rules, which would have required all blocking function calls to happen before destruction. - *end note* ]
+</div>
+
+<div class="numbered">
+*Remarks:* The destructor may block until all threads have exited invocations of `wait` on this object.
+</div>
+</blockquote>
+
+Remove paragraps 11 and 12 from [thread.coord.barrier.class]:
+
+<blockquote class="del">
+```
+~barrier();
+```
+
+<div class="numbered">
+*Expects:* No threads are blocked at a phase synchronization point for any barrier phase of this object. [ *Note:* May be called even if some threads have not yet returned from invocations of `wait`, provided that they have unblocked. This relaxes the usual rules, which would have required all blocking function calls to happen before destruction. - *end note* ]
+</div>
+
+<div class="numbered">
+*Remarks:* The destructor may block until all threads have exited invocations of `wait` on this object. 
+</div>
+</blockquote>
+
+# Review by SG1
+
+This paper was reviewed by SG1 in <a href="http://wiki.edg.com/bin/view/Wg21cologne2019/P1633R0">Cologne</a>.
+
+When discussing the restriction on `counting_semaphore`'s `least_max_value`, the committee decided that `counting_semaphore<0>` should be allowed even though the type can't be used in any meaningful way.  But everyone agreed that `counting_semaphore<-1>` should be forbidden.  As a result, this wording change was made to [[P1135R6]]:
+
+<blockquote>
+<div>`least_max_value` shall be greater than <ins>or equal to</ins> zero; otherwise the program is ill-formed.</div>
+</blockquote>
+
+There was lots of discussion about the change to remove the *Expects* clauses of the destructors, but the committee ended up approving that change as it was presented.  So no further changes are needed to P1135.
+
+With the change to the lower limit of `least_max_value`, SG1 strongly approved the paper.
