@@ -7,12 +7,12 @@ Distributed under the Boost Software License v1.0 (boost.org/LICENSE_1_0.txt)
 <pre class='metadata'>
 Title: Add wait/notify to atomic_ref&lt;T&gt;
 Shortname: P1643
-Revision: 0
+Revision: 1
 Status: P
 Group: WG21
 Audience: SG1, LEWG, LWG
 Editor: David Olsen, NVIDIA, dolsen@nvidia.com
-URL: https://wg21.link/P1643R0
+URL: https://wg21.link/P1643R1
 !Source: <a href="https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/blob/master/atomic_ref_wait.bs">GitHub</a>
 Issue Tracking: GitHub https://github.com/brycelelbach/wg21_p1135_cpp20_synchronization_library/issues
 Metadata Order: Author, This Version, Source, Issue Tracking, Project, Audience
@@ -99,6 +99,8 @@ back in line with that of `atomic<T>`.
 
 **Revision 0:** Initial version.
 
+**Revision 1:** Fix formatting typo.  Fix misspelling: "memory_orger" to "memory_order".  Improved the wording of the *Remarks* clauses of `notify_one` and `notify_all` without changing the meaning.
+
 # Wording # {#wording}
 
 Note: The following changes are relative to the post Kona 2019
@@ -161,14 +163,9 @@ namespace std {
   
     bool compare_exchange_strong(T&, T,
                    memory_order = memory_order_seq_cst) const noexcept;
-</code></pre>
-<pre class="ins"><code>
-&nbsp;   void wait(T, memory_order = memory_order::seq_cst) const noexcept;
+<div class="ins">    void wait(T, memory_order = memory_order::seq_cst) const noexcept;
     void notify_one() noexcept;
-    void notify_all() noexcept;
-</code></pre>
-<pre><code>
-&nbsp; };
+    void notify_all() noexcept;</div>&nbsp; };
 }
 </code></pre>
 </blockquote>
@@ -206,7 +203,7 @@ void notify_one() noexcept;
 </div>
 
 <div class="numbered">
-*Remarks*: This function is an atomic notifying operation ([**atomics.wait**]).
+*Remarks*: This function is an atomic notifying operation ([**atomics.wait**]) on atomic object `*ptr`.
 </div>
 
 ```
@@ -218,7 +215,7 @@ void notify_all() noexcept;
 </div>
 
 <div class="numbered">
-*Remarks*: This function is an atomic notifying operation ([**atomics.wait**]).
+*Remarks*: This function is an atomic notifying operation ([**atomics.wait**]) on atomic object `*ptr`.
 </div>
 </blockquote>
 
@@ -234,14 +231,9 @@ namespace std {
 
     bool compare_exchange_strong(<i>integral</i>&, <i>integral</i>,
                    memory_order = memory_order_seq_cst) const noexcept;
-</code></pre>
-<pre class="ins"><code>
-&nbsp;   void wait(<i>integral</i>, memory_orger = memory_order::seq_cst) const noexcept;
+<div class="ins">    void wait(<i>integral</i>, memory_order = memory_order::seq_cst) const noexcept;
     void notify_one() noexcept;
-    void notify_all() noexcept;
-</code></pre>
-<pre><code>
-&nbsp;
+    void notify_all() noexcept;</div>
 &nbsp;   <i>integral</i> fetch_add(<i>integral</i>,
                    memory_order = memory_order_seq_cst) const noexcept;
     // ...
@@ -260,14 +252,9 @@ namespace std {
 
     bool compare_exchange_strong(<i>floating-point</i>&amp;, <i>floating-point</i>,
                    memory_order = memory_order_seq_cst) const noexcept;
-</code></pre>
-<pre class="ins"><code>
-&nbsp;   void wait(<i>floating-point</i>, memory_orger = memory_order::seq_cst) const noexcept;
+<div class="ins">    void wait(<i>floating-point</i>, memory_order = memory_order::seq_cst) const noexcept;
     void notify_one() noexcept;
-    void notify_all() noexcept;
-</code></pre>
-<pre><code>
-&nbsp;
+    void notify_all() noexcept;</div>
 &nbsp;   <i>floating-point</i> fetch_add(<i>floating-point</i>,
                    memory_order = memory_order_seq_cst) const noexcept;
     // ...
@@ -286,14 +273,9 @@ namespace std {
 
     bool compare_exchange_strong(T*&, T*,
                    memory_order = memory_order_seq_cst) const noexcept;
-</code></pre>
-<pre class="ins"><code>
-&nbsp;   void wait(T*, memory_orger = memory_order::seq_cst) const noexcept;
+<div class="ins">    void wait(T*, memory_order = memory_order::seq_cst) const noexcept;
     void notify_one() noexcept;
-    void notify_all() noexcept;
-</code></pre>
-<pre><code>
-&nbsp;
+    void notify_all() noexcept;</div>
 &nbsp;   T* fetch_add(difference_type, memory_order = memory_order_seq_cst) const noexcept;
     // ...
 </code></pre>

@@ -7,7 +7,7 @@ Distributed under the Boost Software License v1.0 (boost.org/LICENSE_1_0.txt)
 <pre class='metadata'>
 Title: The C++20 Synchronization Library
 Shortname: P1135
-Revision: 5
+Revision: 6
 Status: P
 Group: WG21
 Audience: LWG
@@ -160,6 +160,8 @@ There is one design change, which will be included in <a href="https://wg21.link
 
   - Allow `latch::try_wait` to spuriously return `false`.
 
+**Revision 6:** Removed the wording for the destructors of `counting_semaphore`, `latch`, and `barrier` that allowed the destructor to be called when some member functions in other threads had not yet returned.  This design change has been added to [[P1633R1]].  Based on SG1's discussion of [[P1633R1]], the restriction on the template parameter of `counting_semaphore` was changed from `> 0` to `>= 0`.  Several small wording improvements based on <a href="http://wiki.edg.com/bin/view/Wg21cologne2019/LWG1135Notes">LWG feedback</a> in Cologne.
+
 # Wording # {#wording}
 
 Note: The following changes are relative to the post Kona 2019 working draft of ISO/IEC 14882, ([[N4810]]).
@@ -172,7 +174,7 @@ Modify paragraph 3 in <a href="http://eel.is/c++draft/compliance">16.5.1.3
 [**compliance**]</a> as follows:
 
 <blockquote><div>
-The supplied version of the header `<cstdlib>` shall declare at least the functions `abort`, `atexit`, `at_quick_exit`, `exit`, and `quick_exit` (<a href="http://eel.is/c++draft/support.start.term">17.5</a>). <ins>The supplied version of the header `<atomic>` shall meet the same requirements as for a hosted implementation except that support for always lock-free integral atomic types (<a href="http://eel.is/c++draft/atomics.lockfree">[**atomics.lockfree**]</a>) is optional, and the type aliases `atomic_signed_lock_free` and `atomic_unsigned_lock_free` (<a href="http://eel.is/c++draft/atomics.alias">[**atomics.alias**]</a>) are optional.</ins> The other headers listed in this table shall meet the same requirements as for a hosted implementation.
+The supplied version of the header `<cstdlib>` shall declare at least the functions `abort`, `atexit`, `at_quick_exit`, `exit`, and `quick_exit` (<a href="http://eel.is/c++draft/support.start.term">17.5</a>). <ins>The supplied version of the header `<atomic>` shall meet the same requirements as for a hosted implementation except that support for always lock-free integral atomic types (<a href="http://eel.is/c++draft/atomics.lockfree">[**atomics.lockfree**]</a>) is implementation-defined, and whether or not the type aliases `atomic_signed_lock_free` and `atomic_unsigned_lock_free` are defined (<a href="http://eel.is/c++draft/atomics.alias">[**atomics.alias**]</a>) is implementation-defined.</ins> The other headers listed in this table shall meet the same requirements as for a hosted implementation.
 </div></blockquote>
 
 Modify the header synopsis for `<atomic>` in <a href="http://eel.is/c++draft/atomics.syn">[**atomics.syn**]</a> as follows:
@@ -187,31 +189,28 @@ namespace std {
   <i>// 31.8, non-member functions</i>
   <i>// ...</i>
 
-</code></pre>
-<pre class="ins"><code>  template&lt;class T&gt; </code></pre>
-<pre class="ins"><code>    void atomic_wait(const volatile atomic&lt;T&gt;*, </code></pre>
-<pre class="ins"><code>                     typename atomic&lt;T&gt;::value_type);</code></pre>
-<pre class="ins"><code>  template&lt;class T&gt; </code></pre>
-<pre class="ins"><code>    void atomic_wait(const atomic&lt;T&gt;*,</code></pre>
-<pre class="ins"><code>                     typename atomic&lt;T&gt;::value_type);</code></pre>
-<pre class="ins"><code>  template&lt;class T&gt; </code></pre>
-<pre class="ins"><code>    void atomic_wait_explicit(const volatile atomic&lt;T&gt;*, </code></pre>
-<pre class="ins"><code>                              typename atomic&lt;T&gt;::value_type, </code></pre>
-<pre class="ins"><code>                              memory_order);</code></pre>
-<pre class="ins"><code>  template&lt;class T&gt; </code></pre>
-<pre class="ins"><code>    void atomic_wait_explicit(const atomic&lt;T&gt;*, </code></pre>
-<pre class="ins"><code>                              typename atomic&lt;T&gt;::value_type,</code></pre>
-<pre class="ins"><code>                              memory_order);</code></pre>
-<pre class="ins"><code>  template&lt;class T&gt; </code></pre>
-<pre class="ins"><code>    void atomic_notify_one(volatile atomic&lt;T&gt;*);</code></pre>
-<pre class="ins"><code>  template&lt;class T&gt; </code></pre>
-<pre class="ins"><code>    void atomic_notify_one(atomic&lt;T&gt;*);</code></pre>
-<pre class="ins"><code>  template&lt;class T&gt; </code></pre>
-<pre class="ins"><code>    void atomic_notify_all(volatile atomic&lt;T&gt;*);</code></pre>
-<pre class="ins"><code>  template&lt;class T&gt; </code></pre>
-<pre class="ins"><code>    void atomic_notify_all(atomic&lt;T&gt;*);</code></pre>
-<pre><code>
-&nbsp;
+<div class="ins">  template&lt;class T&gt;
+    void atomic_wait(const volatile atomic&lt;T&gt;*,
+                     typename atomic&lt;T&gt;::value_type);
+  template&lt;class T&gt;
+    void atomic_wait(const atomic&lt;T&gt;*,
+                     typename atomic&lt;T&gt;::value_type);
+  template&lt;class T&gt;
+    void atomic_wait_explicit(const volatile atomic&lt;T&gt;*,
+                              typename atomic&lt;T&gt;::value_type,
+                              memory_order);
+  template&lt;class T&gt;
+    void atomic_wait_explicit(const atomic&lt;T&gt;*,
+                              typename atomic&lt;T&gt;::value_type,
+                              memory_order);
+  template&lt;class T&gt;
+    void atomic_notify_one(volatile atomic&lt;T&gt;*);
+  template&lt;class T&gt;
+    void atomic_notify_one(atomic&lt;T&gt;*);
+  template&lt;class T&gt;
+    void atomic_notify_all(volatile atomic&lt;T&gt;*);
+  template&lt;class T&gt;
+    void atomic_notify_all(atomic&lt;T&gt;*);</div>
 &nbsp; <i>// 31.3, type aliases</i>
   <i>// ...</i>
    
@@ -222,23 +221,15 @@ namespace std {
   using atomic_intmax_t       = atomic&lt;intmax_t&gt;;
   using atomic_uintmax_t      = atomic&lt;uintmax_t&gt;;
  
-</code></pre>
-<pre class="ins"><code>  using atomic_signed_lock_free   = <i>see below</i>;</code></pre>
-<pre class="ins"><code>  using atomic_unsigned_lock_free = <i>see below</i>;</code></pre>
-<pre><code>
-&nbsp;
-
+<div class="ins">  using atomic_signed_lock_free   = <i>see below</i>;
+  using atomic_unsigned_lock_free = <i>see below</i>;</div>
   <i>// 31.9, flag type and operations</i>
   struct atomic_flag;
-</code></pre>
-<ins><xmp>
-  bool atomic_flag_test(const volatile atomic_flag*) noexcept;
+
+<div class="ins">  bool atomic_flag_test(const volatile atomic_flag*) noexcept;
   bool atomic_flag_test(const atomic_flag*) noexcept;
   bool atomic_flag_test_explicit(const volatile atomic_flag*, memory_order) noexcept;
-  bool atomic_flag_test_explicit(const atomic_flag*, memory_order) noexcept;
-</xmp></ins>
-<pre><code>
-&nbsp; bool atomic_flag_test_and_set(volatile atomic_flag*) noexcept;
+  bool atomic_flag_test_explicit(const atomic_flag*, memory_order) noexcept;</div>  bool atomic_flag_test_and_set(volatile atomic_flag*) noexcept;
   bool atomic_flag_test_and_set(atomic_flag*) noexcept;
   bool atomic_flag_test_and_set_explicit(volatile atomic_flag*, memory_order) noexcept;
   bool atomic_flag_test_and_set_explicit(atomic_flag*, memory_order) noexcept;
@@ -246,19 +237,17 @@ namespace std {
   void atomic_flag_clear(atomic_flag*) noexcept;
   void atomic_flag_clear_explicit(volatile atomic_flag*, memory_order) noexcept;
   void atomic_flag_clear_explicit(atomic_flag*, memory_order) noexcept;
-</code></pre>
-<pre class="ins"><code>  void atomic_flag_wait(const volatile atomic_flag*, bool) noexcept;</code></pre>
-<pre class="ins"><code>  void atomic_flag_wait(const atomic_flag*, bool) noexcept;</code></pre>
-<pre class="ins"><code>  void atomic_flag_wait_explicit(const volatile atomic_flag*,</code></pre>
-<pre class="ins"><code>                                 bool, memory_order) noexcept;</code></pre>
-<pre class="ins"><code>  void atomic_flag_wait_explicit(const atomic_flag*,</code></pre>
-<pre class="ins"><code>                                 bool, memory_order) noexcept;</code></pre>
-<pre class="ins"><code>  void atomic_flag_notify_one(volatile atomic_flag*) noexcept;</code></pre>
-<pre class="ins"><code>  void atomic_flag_notify_one(atomic_flag*) noexcept;</code></pre>
-<pre class="ins"><code>  void atomic_flag_notify_all(volatile atomic_flag*) const noexcept;</code></pre>
-<pre class="ins"><code>  void atomic_flag_notify_all(atomic_flag*) const noexcept;</code></pre>
-<pre><code>
-&nbsp; #define ATOMIC_FLAG_INIT <i>see below</i>
+<div class="ins">  void atomic_flag_wait(const volatile atomic_flag*, bool) noexcept;
+  void atomic_flag_wait(const atomic_flag*, bool) noexcept;
+  void atomic_flag_wait_explicit(const volatile atomic_flag*,
+                                 bool, memory_order) noexcept;
+  void atomic_flag_wait_explicit(const atomic_flag*,
+                                 bool, memory_order) noexcept;
+  void atomic_flag_notify_one(volatile atomic_flag*) noexcept;
+  void atomic_flag_notify_one(atomic_flag*) noexcept;
+  void atomic_flag_notify_all(volatile atomic_flag*) const noexcept;
+  void atomic_flag_notify_all(atomic_flag*) const noexcept;</div>
+  #define ATOMIC_FLAG_INIT <i>see below</i>
 
   <i>// 30.10, fences</i>
   extern "C" void atomic_thread_fence(memory_order) noexcept;
@@ -286,10 +275,10 @@ The type aliases `atomic_signed_lock_free` and `atomic_unsigned_lock_free` name 
 Insert a new paragraph after paragraph 1 in <a href="http://eel.is/c++draft/atomics.lockfree">[**atomics.lockfree**]</a>:
 
 <blockquote class="ins">
-At least one signed integral specialization of the `atomic` template, along with the specialization for the corresponding unsigned type (<a href="http://eel.is/c++draft/basic.fundamental">[**basic.fundamental**]</a>), shall be always lock-free. [ *Note*: This requirement is optional in freestanding implementations (<a href="http://eel.is/c++draft/compliance">[**compliance**]</a>). - *end note* ]
+At least one signed integral specialization of the `atomic` template, along with the specialization for the corresponding unsigned type (<a href="http://eel.is/c++draft/basic.fundamental">[**basic.fundamental**]</a>), are always lock-free. [ *Note*: This requirement is optional in freestanding implementations (<a href="http://eel.is/c++draft/compliance">[**compliance**]</a>). - *end note* ]
 </blockquote>
 
-Add a new subclause after <a href="http://eel.is/c++draft/atomics.lockfree">[**atomics.lockfree**] with the stable name [**atomics.wait**]</a>:
+Add a new subclause after <a href="http://eel.is/c++draft/atomics.lockfree">[**atomics.lockfree**]</a> with the stable name [**atomics.wait**]:
 
 <blockquote class="ins">
 <b>31.� Waiting and notifying <span style="float: right;">[atomics.wait]</span></b>
@@ -364,15 +353,13 @@ namespace std {
                                  memory_order = memory_order::seq_cst) volatile noexcept;
     bool compare_exchange_strong(T&amp;, T,
                                  memory_order = memory_order::seq_cst) noexcept;
-</code></pre>
-<pre class="ins"><code>    void wait(T, memory_order = memory_order::seq_cst) const volatile noexcept;</code></pre>
-<pre class="ins"><code>    void wait(T, memory_order = memory_order::seq_cst) const noexcept;</code></pre>
-<pre class="ins"><code>    void notify_one() volatile noexcept;</code></pre>
-<pre class="ins"><code>    void notify_one() noexcept;</code></pre>
-<pre class="ins"><code>    void notify_all() volatile noexcept;</code></pre>
-<pre class="ins"><code>    void notify_all() noexcept;</code></pre>
-<pre><code>
-&nbsp;   atomic() noexcept = default;
+<div class="ins">    void wait(T, memory_order = memory_order::seq_cst) const volatile noexcept;
+    void wait(T, memory_order = memory_order::seq_cst) const noexcept;
+    void notify_one() volatile noexcept;
+    void notify_one() noexcept;
+    void notify_all() volatile noexcept;
+    void notify_all() noexcept;</div>
+    atomic() noexcept = default;
     constexpr atomic(T) noexcept;
     atomic(const atomic&amp;) = delete;
     atomic&amp; operator=(const atomic&amp;) = delete;
@@ -446,7 +433,7 @@ Modify <a href="http://eel.is/c++draft/atomics.types.int#1">[**atomics.types.int
 <div class="numbered">
 There are specializations of the `atomic` class template for the integral types `char`, `signed char`, `unsigned char`, `short`, `unsigned short`, `int`, `unsigned int`, `long`, `unsigned long`, `long long`, `unsigned long long`, `char8_t`, `char16_t`, `char32_t`, `wchar_t`, and any other types needed by the typedefs in the header `<cstdint>`.
 For each such type <code><i>integral</i></code>, the specialization <code>atomic&lt;<i>integral</i>&gt;</code> provides additional atomic operations appropriate to integral types.
-[ *Note:* For the specialization `atomic<bool>`, see <a href="http://eel.is/c++draft/atomics.types.generic">31.7</a>. — *end note* ]
+[ *Note:* For the specialization `atomic<bool>`, see <a href="http://eel.is/c++draft/atomics.types.generic">31.7</a>. — *end note* ]
 </div>
 
 <pre><code>
@@ -481,15 +468,13 @@ namespace std {
                                  memory_order = memory_order::seq_cst) volatile noexcept;
     bool compare_exchange_strong(<i>integral</i>&amp;, <i>integral</i>,
                                  memory_order = memory_order::seq_cst) noexcept;
-</code></pre>
-<pre class="ins"><code>    void wait(<i>integral</i>, memory_order = memory_order::seq_cst) const volatile noexcept;</code></pre>
-<pre class="ins"><code>    void wait(<i>integral</i>, memory_order = memory_order::seq_cst) const noexcept;</code></pre>
-<pre class="ins"><code>    void notify_one() volatile noexcept;</code></pre>
-<pre class="ins"><code>    void notify_one() noexcept;</code></pre>
-<pre class="ins"><code>    void notify_all() volatile noexcept;</code></pre>
-<pre class="ins"><code>    void notify_all() noexcept;</code></pre>
-<pre><code>
-&nbsp;   <i>integral</i> fetch_add(<i>integral</i>, memory_order = memory_order::seq_cst) volatile noexcept;
+<div class="ins">    void wait(<i>integral</i>, memory_order = memory_order::seq_cst) const volatile noexcept;
+    void wait(<i>integral</i>, memory_order = memory_order::seq_cst) const noexcept;
+    void notify_one() volatile noexcept;
+    void notify_one() noexcept;
+    void notify_all() volatile noexcept;
+    void notify_all() noexcept;</div>
+    <i>integral</i> fetch_add(<i>integral</i>, memory_order = memory_order::seq_cst) volatile noexcept;
     <i>integral</i> fetch_add(<i>integral</i>, memory_order = memory_order::seq_cst) noexcept;
     <i>integral</i> fetch_sub(<i>integral</i>, memory_order = memory_order::seq_cst) volatile noexcept;
     <i>integral</i> fetch_sub(<i>integral</i>, memory_order = memory_order::seq_cst) noexcept;
@@ -575,17 +560,14 @@ namespace std {
                                  memory_order = memory_order::seq_cst) volatile noexcept;
     bool compare_exchange_strong(<i>floating-point</i>&amp;, <i>floating-point</i>,
                                  memory_order = memory_order::seq_cst) noexcept;
-</code></pre>
-<pre class="ins"><code>    void wait(<i>floating-point</i>,</code></pre>
-<pre class="ins"><code>              memory_order = memory_order::seq_cst) const volatile noexcept;</code></pre>
-<pre class="ins"><code>    void wait(<i>floating-point</i>,</code></pre>
-<pre class="ins"><code>              memory_order = memory_order::seq_cst) const noexcept;</code></pre>
-<pre class="ins"><code>    void notify_one() volatile noexcept;</code></pre>
-<pre class="ins"><code>    void notify_one() noexcept;</code></pre>
-<pre class="ins"><code>    void notify_all() volatile noexcept;</code></pre>
-<pre class="ins"><code>    void notify_all() noexcept;</code></pre>
-<pre><code>
-&nbsp;
+<div class="ins">    void wait(<i>floating-point</i>,
+              memory_order = memory_order::seq_cst) const volatile noexcept;
+    void wait(<i>floating-point</i>,
+              memory_order = memory_order::seq_cst) const noexcept;
+    void notify_one() volatile noexcept;
+    void notify_one() noexcept;
+    void notify_all() volatile noexcept;
+    void notify_all() noexcept;</div>
     <i>floating-point</i> fetch_add(<i>floating-point</i>,
                              memory_order = memory_order::seq_cst) volatile noexcept;
     <i>floating-point</i> fetch_add(<i>floating-point</i>,
@@ -644,15 +626,13 @@ namespace std {
                                  memory_order = memory_order::seq_cst) volatile noexcept;
     bool compare_exchange_strong(T*&amp;, T*,
                                  memory_order = memory_order::seq_cst) noexcept;
-</code></pre>
-<pre class="ins"><code>    void wait(T*, memory_order = memory_order::seq_cst) const volatile noexcept;</code></pre>
-<pre class="ins"><code>    void wait(T*, memory_order = memory_order::seq_cst) const noexcept;</code></pre>
-<pre class="ins"><code>    void notify_one() volatile noexcept;</code></pre>
-<pre class="ins"><code>    void notify_one() noexcept;</code></pre>
-<pre class="ins"><code>    void notify_all() volatile noexcept;</code></pre>
-<pre class="ins"><code>    void notify_all() noexcept;</code></pre>
-<pre><code>
-&nbsp;   T* fetch_add(ptrdiff_t, memory_order = memory_order::seq_cst) volatile noexcept;
+<div class="ins">    void wait(T*, memory_order = memory_order::seq_cst) const volatile noexcept;
+    void wait(T*, memory_order = memory_order::seq_cst) const noexcept;
+    void notify_one() volatile noexcept;
+    void notify_one() noexcept;
+    void notify_all() volatile noexcept;
+    void notify_all() noexcept;</div>
+    T* fetch_add(ptrdiff_t, memory_order = memory_order::seq_cst) volatile noexcept;
     T* fetch_add(ptrdiff_t, memory_order = memory_order::seq_cst) noexcept;
     T* fetch_sub(ptrdiff_t, memory_order = memory_order::seq_cst) volatile noexcept;
     T* fetch_sub(ptrdiff_t, memory_order = memory_order::seq_cst) noexcept;
@@ -693,43 +673,31 @@ Modify <a href="http://eel.is/c++draft/atomics.flag">[**atomics.flag**]</a> as f
 <blockquote>
 <b>31.9 Flag type and operations <span style="float: right;">[atomics.flag]</span></b>
 
-<xmp>
+<pre><code>
 namespace std {
   struct atomic_flag {
-</xmp>
-<ins><xmp>
-    bool test(memory_order = memory_order::seq_cst) const volatile noexcept;
-    bool test(memory_order = memory_order::seq_cst) const noexcept;
-</xmp></ins>
-<pre><code>
-&nbsp;   bool test_and_set(memory_order = memory_order::seq_cst) volatile noexcept;
+<div class="ins">    bool test(memory_order = memory_order::seq_cst) const volatile noexcept;
+    bool test(memory_order = memory_order::seq_cst) const noexcept;</div>    bool test_and_set(memory_order = memory_order::seq_cst) volatile noexcept;
     bool test_and_set(memory_order = memory_order::seq_cst) noexcept;
     void clear(memory_order = memory_order::seq_cst) volatile noexcept;
     void clear(memory_order = memory_order::seq_cst) noexcept;
-</code></pre>
-<pre class="ins"><code>    void wait(bool, memory_order = memory_order::seq_cst) const volatile noexcept;</code></pre>
-<pre class="ins"><code>    void wait(bool, memory_order = memory_order::seq_cst) const noexcept;</code></pre>
-<pre class="ins"><code>    void notify_one() volatile noexcept;</code></pre>
-<pre class="ins"><code>    void notify_one() noexcept;</code></pre>
-<pre class="ins"><code>    void notify_all() volatile noexcept;</code></pre>
-<pre class="ins"><code>    void notify_all() noexcept;</code></pre>
-<pre><code>
-&nbsp;
-&nbsp;   atomic_flag() noexcept = default;
+
+<div class="ins">    void wait(bool, memory_order = memory_order::seq_cst) const volatile noexcept;
+    void wait(bool, memory_order = memory_order::seq_cst) const noexcept;
+    void notify_one() volatile noexcept;
+    void notify_one() noexcept;
+    void notify_all() volatile noexcept;
+    void notify_all() noexcept;</div>
+    atomic_flag() noexcept = default;
     atomic_flag(const atomic_flag&amp;) = delete;
     atomic_flag&amp; operator=(const atomic_flag&amp;) = delete;
     atomic_flag&amp; operator=(const atomic_flag&amp;) volatile = delete;
   };
  
-</code></pre>
-<ins><xmp>
-  bool atomic_flag_test(const volatile atomic_flag*) noexcept;
+<div class="ins">  bool atomic_flag_test(const volatile atomic_flag*) noexcept;
   bool atomic_flag_test(const atomic_flag*) noexcept;
   bool atomic_flag_test_explicit(const volatile atomic_flag*, memory_order) noexcept;
-  bool atomic_flag_test_explicit(const atomic_flag*, memory_order) noexcept;
-</xmp></ins>
-<pre><code>
-&nbsp; bool atomic_flag_test_and_set(volatile atomic_flag*) noexcept;
+  bool atomic_flag_test_explicit(const atomic_flag*, memory_order) noexcept;</div>  bool atomic_flag_test_and_set(volatile atomic_flag*) noexcept;
   bool atomic_flag_test_and_set(atomic_flag*) noexcept;
   bool atomic_flag_test_and_set_explicit(volatile atomic_flag*, memory_order) noexcept;
   bool atomic_flag_test_and_set_explicit(atomic_flag*, memory_order) noexcept;
@@ -737,9 +705,8 @@ namespace std {
   void atomic_flag_clear(atomic_flag*) noexcept;
   void atomic_flag_clear_explicit(volatile atomic_flag*, memory_order) noexcept;
   void atomic_flag_clear_explicit(atomic_flag*, memory_order) noexcept;
-</code></pre>
-<ins><xmp>
-  void atomic_flag_wait(const volatile atomic_flag*, bool) noexcept;
+
+<div class="ins">  void atomic_flag_wait(const volatile atomic_flag*, bool) noexcept;
   void atomic_flag_wait(const atomic_flag*, bool) noexcept;
   void atomic_flag_wait_explicit(const volatile atomic_flag*, 
                                  bool, memory_order) noexcept;
@@ -748,15 +715,10 @@ namespace std {
   void atomic_flag_notify_one(volatile atomic_flag*) noexcept;
   void atomic_flag_notify_one(atomic_flag*) noexcept;
   void atomic_flag_notify_all(volatile atomic_flag*) const noexcept;
-  void atomic_flag_notify_all(atomic_flag*) const noexcept;
-</xmp></ins>
-<pre><code>
-&nbsp;
-&nbsp; #define ATOMIC_FLAG_INIT <i>see below</i>
-</code></pre>
-<xmp>
+  void atomic_flag_notify_all(atomic_flag*) const noexcept;</div>
+  #define ATOMIC_FLAG_INIT <i>see below</i>
 }
-</xmp>
+</code></pre>
 
 <div class="numbered">
 The `atomic_flag` type provides the classic test-and-set functionality. It has two states, set and clear.
@@ -822,7 +784,7 @@ For `atomic_flag_test`, let `order` be `memory_order::seq_cst`.
    bool atomic_flag_test_and_set_explicit(atomic_flag* object,
                                           memory_order order) noexcept;
    bool atomic_flag::test_and_set(memory_order order =
-                                    memory_order::seq_cst) volatile noexcept;
+                                   memory_order::seq_cst) volatile noexcept;
    bool atomic_flag::test_and_set(memory_order order =
                                     memory_order::seq_cst) noexcept;
 </xmp>
@@ -1003,11 +965,11 @@ Class `counting_semaphore` maintains an internal counter that is initialized whe
 </div>
 
 <div class="numbered">
-`least_max_value` shall be greater than zero; otherwise the program is ill-formed.
+`least_max_value` shall be non-negative; otherwise the program is ill-formed.
 </div>
 
 <div class="numbered">
-Concurrent invocations of the member functions of `counting_semaphore`, other than its destructor, do not introduce data races.  The member functions `release` and `try_acquire` shall execute atomically.
+Concurrent invocations of the member functions of `counting_semaphore`, other than its destructor, do not introduce data races.
 </div>
 
 ```
@@ -1032,15 +994,6 @@ constexpr explicit counting_semaphore(ptrdiff_t desired);
 
 <div class="numbered">
 *Throws:* Nothing.
-</div>
-
-```
-~counting_semaphore();
-```
-
-<div class="numbered">
-*Expects:* For every function call blocked on `*this`, a function call that will cause it to unblock and return has happened before this call.
-[ *Note:* This relaxes the usual rules, which would have required all blocking function calls to happen before destruction. — *end note* ]
 </div>
 
 ``` 
@@ -1076,7 +1029,7 @@ bool try_acquire() noexcept;
 *Effects:*
 
   - With low probability, returns immediately. An implementation should ensure that `try_acquire` does not consistently return `false` in the absence of contending acquisitions.
-  - Otherwise, if `counter` is greater than zero, atomically decrement `counter` by one.
+  - Otherwise, atomically check whether `counter` is greater than zero and, if so, decrement `counter` by one.
 
 </div>
 
@@ -1188,7 +1141,7 @@ A `latch` maintains an internal counter that is initialized when the `latch` is 
 </div>
 
 <div class="numbered">
-Concurrent invocations of the member functions of `latch`, other than its destructor, do not introduce data races. The member functions `count_down` and `try_wait` shall execute atomically.
+Concurrent invocations of the member functions of `latch`, other than its destructor, do not introduce data races.
 </div>
 
 ```
@@ -1205,18 +1158,6 @@ constexpr explicit latch(ptrdiff_t expected);
 
 <div class="numbered">
 *Throws:* Nothing.
-</div>
-
-```
-~latch();
-```
-
-<div class="numbered">
-*Expects:* No threads are blocked on `*this`. [ *Note:* May be called even if some threads have not yet returned from invocations of `wait` on this object, provided that they are unblocked. This relaxes the usual rules, which would have required all blocking function calls to happen before destruction. - *end note* ]
-</div>
-
-<div class="numbered">
-*Remarks:* The destructor may block until all threads have exited invocations of `wait` on this object.
 </div>
 
 ```
@@ -1313,7 +1254,6 @@ namespace std {
 
     constexpr explicit barrier(ptrdiff_t phase_count,
                                CompletionFunction f = CompletionFunction());
-
     ~barrier();
 
     barrier(const barrier&amp;) = delete;
@@ -1335,7 +1275,7 @@ namespace std {
 Each <dfn>barrier phase</dfn> consists of the following steps:
 
   - The expected count is decremented by each call to `arrive` or `arrive_and_drop`.
-  - When the expected count reaches zero, the phase completion step is run. For the specialization with the default value of the `CompletionFunction` template parameter, the completion step is run atomically as part of the call to `arrive` or `arrive_and_drop` that caused the expected count to reach zero. For other specializations, the completion step is run on one of the threads that arrived at the barrier during the phase.
+  - When the expected count reaches zero, the phase completion step is run. For the specialization with the default value of the `CompletionFunction` template parameter, the completion step is run as part of the call to `arrive` or `arrive_and_drop` that caused the expected count to reach zero. For other specializations, the completion step is run on one of the threads that arrived at the barrier during the phase.
   - When the completion step finishes, the expected count is reset to what was specified by the `expected` argument to the constructor, possibly adjusted by calls to `arrive_and_drop`, and the next phase starts.
 </div>
 
@@ -1353,7 +1293,7 @@ The end of the completion step strongly happens before the returns from all call
 </div>
 
 <div class="numbered">
-Concurrent invocations of the member functions of `barrier`, other than its destructor, do not introduce data races. The member functions `arrive` and `arrive_and_drop` shall execute atomically.
+Concurrent invocations of the member functions of `barrier`, other than its destructor, do not introduce data races. The member functions `arrive` and `arrive_and_drop` execute atomically.
 </div>
 
 <div class="numbered">
@@ -1387,18 +1327,6 @@ constexpr explicit barrier(ptrdiff_t phase_count,
 </div>
 
 ```
-~barrier();
-```
-
-<div class="numbered">
-*Expects:* No threads are blocked at a phase synchronization point for any barrier phase of this object. [ *Note:* May be called even if some threads have not yet returned from invocations of `wait`, provided that they have unblocked. This relaxes the usual rules, which would have required all blocking function calls to happen before destruction. - *end note* ]
-</div>
-
-<div class="numbered">
-*Remarks:* The destructor may block until all threads have exited invocations of `wait` on this object. 
-</div>
-
-```
 [[nodiscard]] arrival_token arrive(ptrdiff_t update = 1);
 ```
 
@@ -1428,7 +1356,7 @@ constexpr explicit barrier(ptrdiff_t phase_count,
 </div>
 
 <div class="numbered">
-*Remarks:* This call can cause the completion step for the current phase to start.
+[ *Note*: This call can cause the completion step for the current phase to start. - *end note* ]
 </div>
 
 
@@ -1487,7 +1415,7 @@ void arrive_and_drop();
 </div>
 
 <div class="numbered">
-*Remarks:* This call can cause the completion step for the current phase to start.
+[ *Note:* This call can cause the completion step for the current phase to start. - *end note* ]
 </div>
 </blockquote>
 
